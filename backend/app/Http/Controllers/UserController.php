@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\RegistrationVerificationMail;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Mail;
 
 class UserController extends Controller
 {
@@ -37,6 +39,8 @@ class UserController extends Controller
                 'password'=>bcrypt($request->password)
             ]);
     
+            Mail::to($request->email)->send(new RegistrationVerificationMail());
+
             return response()->json(['message'=>'The regsitration was successfull! Please verify yourself, we have sent you an email where you have to click the verify button!'], 202);
         } catch(ValidationException $e){
             return response()->json($e->validator->errors(), 422);
