@@ -13,12 +13,14 @@ class RegistrationVerificationMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    protected $url;
+
     /**
      * Create a new message instance.
      */
-    public function __construct()
+    public function __construct(string $url)
     {
-        //
+        $this->url = $url;
     }
 
     /**
@@ -36,9 +38,11 @@ class RegistrationVerificationMail extends Mailable
      */
     public function content(): Content
     {
-        return new Content(
+        $email = new Content(
             markdown: 'mail.registration-verification-mail',
         );
+
+        return $email->with('url', $this->url);
     }
 
     /**

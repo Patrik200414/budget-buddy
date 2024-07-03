@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Mail\RegistrationVerificationMail;
 use App\Models\User;
+use Hash;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Mail;
@@ -31,7 +32,7 @@ class UserController extends Controller
                 ]
             );
     
-            User::create([
+            $createdUser = User::create([
                 'id'=>uuid_create(),
                 'first_name'=>$request->firstName,
                 'last_name'=>$request->lastName,
@@ -39,7 +40,10 @@ class UserController extends Controller
                 'password'=>bcrypt($request->password)
             ]);
     
-            Mail::to($request->email)->send(new RegistrationVerificationMail());
+            $verificationUrl = env('EMAIL_VERIFICATION_LINK');
+            $hashedIdForVerification = Hash::make($createdUser->id);
+            
+            Mail::to($request->email)->send(new RegistrationVerificationMail($verificationUrl . '/' . $hashedIdForVerification));
 
             return response()->json(['message'=>'The regsitration was successfull! Please verify yourself, we have sent you an email where you have to click the verify button!'], 202);
         } catch(ValidationException $e){
