@@ -39,6 +39,8 @@ class UserController extends Controller
                 'email'=>$request->email,
                 'password'=>bcrypt($request->password)
             ]);
+
+            
     
             $verificationUrl = env('EMAIL_VERIFICATION_LINK');
             $hashedIdForVerification = Hash::make($createdUser->id);
