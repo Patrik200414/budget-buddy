@@ -36,6 +36,8 @@ class UserController extends Controller
                 'email'=>$request->email,
                 'password'=>bcrypt($request->password)
             ]);
+
+            
     
             return response()->json(['message'=>'The regsitration was successfull! Please verify yourself, we have sent you an email where you have to click the verify button!'], 202);
         } catch(ValidationException $e){
