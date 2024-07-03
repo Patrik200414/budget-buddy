@@ -15,7 +15,7 @@ class UserController extends Controller
                     'firstName'=>['required', 'min:2', 'max:255'],
                     'lastName'=>['required', 'min:2', 'max:255'],
                     'email'=>['required', 'email'],
-                    'password'=>['required', 'min:6', 'max:255']
+                    'password'=>['required', 'confirmed', 'min:6', 'max:255'],
                 ],
                 [
                     'firstName.min' => 'First name should be at least 2 characters!',
