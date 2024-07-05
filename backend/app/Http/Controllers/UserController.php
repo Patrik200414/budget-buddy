@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\AlreadyVerifiedException;
+use App\Exceptions\NonExistingUserException;
 use App\Mail\RegistrationVerificationMail;
 use App\Models\User;
-use Hash;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Mail;
+use \Exception;
 
 class UserController extends Controller
 {
@@ -31,9 +33,10 @@ class UserController extends Controller
                     'password.max' => 'Password shouldn\'t exceed 255 characters!',
                 ]
             );
-    
-            $createdUser = User::create([
-                'id'=>uuid_create(),
+
+            $userId = uuid_create();
+            User::create([
+                'id'=>$userId,
                 'first_name'=>$request->firstName,
                 'last_name'=>$request->lastName,
                 'email'=>$request->email,
@@ -43,14 +46,32 @@ class UserController extends Controller
             
     
             $verificationUrl = env('EMAIL_VERIFICATION_LINK');
-            $hashedIdForVerification = Hash::make($createdUser->id);
             
-            Mail::to($request->email)->send(new RegistrationVerificationMail($verificationUrl . '/' . $hashedIdForVerification));
+            Mail::to($request->email)->send(new RegistrationVerificationMail($verificationUrl . '/' . $userId));
 
             return response()->json(['message'=>'The regsitration was successfull! Please verify yourself, we have sent you an email where you have to click the verify button!'], 202);
         } catch(ValidationException $e){
             return response()->json($e->validator->errors(), 422);
+        }    
+    }
+
+    public function verifyRegistration($userId){
+        try{
+            $verifiedUser = User::find($userId);
+            if($verifiedUser === null){
+                throw new NonExistingUserException();
+            }
+
+            $verification = $verifiedUser->email_verified_at;
+            if($verification !== null){
+                throw new AlreadyVerifiedException();
+            }
+            $verifiedUser->email_verified_at = time();
+            $verifiedUser->save();
+
+            return response(null, 200);
+        } catch(NonExistingUserException | AlreadyVerifiedException $e){
+            return response()->json(['error'=>$e->getMessage()], $e->getCode());
         }
-        
     }
 }
