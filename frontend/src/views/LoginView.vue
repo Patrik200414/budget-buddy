@@ -36,7 +36,7 @@ async function handleSubmit(){
 </script>
 
 <template>
-     <div class="container d-flex justify-content-center">
+     <div class="container d-flex justify-content-center align-items-center vh-100">
         <div class="w-50">
             <h1 class="text-center">Login</h1>
             <form @submit.prevent="handleSubmit" class="d-flex flex-column align-items-center">
