@@ -19,9 +19,8 @@ class UserController extends Controller
 {
     public function registration(Request $request){
         try{
+            $this->validateRegistrationInput($request);
             DB::transaction(function() use ($request){
-                $this->validateRegistrationInput($request);
-
                 $ceatedUser = User::create([
                     'first_name'=>$request->firstName,
                     'last_name'=>$request->lastName,
@@ -36,7 +35,8 @@ class UserController extends Controller
                 return response()->json(['message'=>'The regsitration was successfull! Please verify yourself, we have sent you an email where you have to click the verify button!'], 202);
             });
         } catch(ValidationException $e){
-            return response()->json($e->validator->errors(), 422);
+            $errorMessages = $this->formatValidationErrorMessage($e);
+            return response()->json(['error'=>$errorMessages], 422);
         }    
     }
 
@@ -84,7 +84,10 @@ class UserController extends Controller
                 $authenticationTokenName=>$token
             ], 202);
         } catch(InvalidCredentialsException | NotVerifiedEmailException $e){
-            return response()->json(['error'=>$e->getMessage()], $e->getCode());
+            return response()->json(['error'=>[$e->getMessage()]], $e->getCode());
+        } catch(ValidationException $e){
+            $errorMessages = $this->formatValidationErrorMessage($e);
+            return response()->json(['error'=>$errorMessages], 422);            
         }
     }
 
@@ -125,5 +128,18 @@ class UserController extends Controller
                 'password.max' => 'Password shouldn\'t exceed 255 characters!',
             ]
         )->validate();
+    }
+
+    protected function formatValidationErrorMessage(ValidationException $e){
+        $errors = $e->errors();
+
+        $errorMessages = [];
+        foreach($errors as $error => $messages){
+            foreach($messages as $message){
+                $errorMessages[] = $message;
+            }
+        }
+
+        return $errorMessages;
     }
 }

@@ -8,23 +8,27 @@ const tokenName = import.meta.env.VITE_AUTH_KEY_NAME;
 const email = defineModel('email');
 const password = defineModel('password');
 const isLoading = ref(false);
-const errorMessage = ref();
+const errorMessages = ref([]);
 
 async function handleSubmit(){
     try{
-        errorMessage.value = null;
+        errorMessages.value = [];
         isLoading.value = true;
         const {data} = await axios.post('/api/user/login', {
             email: email.value,
             password: password.value
+        }, {
+            headers: {
+                'Accept': 'application/json'
+            }
         });
 
         localStorage.setItem(tokenName, JSON.stringify(data));
         router.push('/');
     } catch(error){
+        const responseMessage = error.response.data.error;
         console.log(error);
-        const responseMessage = error.response.data.error
-        errorMessage.value = responseMessage;
+        errorMessages.value = responseMessage;
     } finally{
         isLoading.value = false;
     }
@@ -45,7 +49,7 @@ async function handleSubmit(){
                     <input v-model="password" type="password" class="form-control" id="password" placeholder="Password">
                 </div>
                 <em v-show="isLoading" class="mb-4">Loading ...</em>
-                <em v-if="errorMessage" class="text-danger mb-4">{{errorMessage}}</em>
+                <em v-for="errorMessage in errorMessages" :key="errorMessage" class="text-danger mb-4">{{errorMessage}}</em>
                 <button type="submit" class="btn btn-primary w-100">Submit</button>
             </form>
         </div>
