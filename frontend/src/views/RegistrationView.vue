@@ -12,6 +12,7 @@ const passwordConfirmation = defineModel('passwordConfirmation');
 const isLoading = ref(false);
 const errorMessages = ref([]);
 const isInputsDisabled = ref(false);
+const information = ref();
 
 async function handleSubmit(){
     try{
@@ -30,7 +31,7 @@ async function handleSubmit(){
             }
         });
 
-        console.log(registrationInformation);
+        information.value = registrationInformation.data.message;
     } catch(error){
         errorMessages.value = error.response.data.error;
         isInputsDisabled.value = false;
@@ -43,6 +44,9 @@ async function handleSubmit(){
 </script>
 
 <template>
+    <div v-if="information" class="alert alert-primary text-center" role="alert">
+        {{ information }}
+    </div>
     <div class="container d-flex justify-content-center align-items-center vh-100">
         <div class="w-50">
             <h1 class="text-center">Registration</h1>
