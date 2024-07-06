@@ -7,7 +7,9 @@ use App\Exceptions\InvalidCredentialsException;
 use App\Exceptions\NonExistingUserException;
 use App\Exceptions\NotVerifiedEmailException;
 use App\Mail\RegistrationVerificationMail;
+use App\Mail\ResetPasswordMail;
 use App\Models\User;
+use Faker\Provider\Uuid;
 use Hash;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -59,6 +61,37 @@ class UserController extends Controller
             return response()->json(['message'=>'User successfully verified! Now you can log into your account!'], 200);
         } catch(NonExistingUserException | AlreadyVerifiedException $e){
             return response()->json(['error'=>$e->getMessage()], $e->getCode());
+        }
+    }
+
+    public function resetPassword(Request $request){
+        try{
+            $this->validateResetPassword($request);
+
+            $result = DB::transaction(function () use ($request){
+                $user = User::where(['email'=>$request->email])->first();
+
+                if(!$user){
+                    throw new NonExistingUserException();
+                }
+
+                $passwordResetToken = Uuid::uuid();
+
+                $user->remember_token = $passwordResetToken;
+                $user->save();
+
+                $resetPasswordUrl = env('PASSWORD_RESET_LINK');
+
+                Mail::to($user->email)->send(new ResetPasswordMail($resetPasswordUrl . '/' . $passwordResetToken));
+                return response()->json(['message'=>'Please check out your email inboxe! We have sent a password reset link!'], 200);
+            });
+
+            return $result;
+        } catch(ValidationException $e){
+            $errorMessages = $this->formatValidationErrorMessage($e);
+            return response()->json(['error'=>$errorMessages], 422);
+        } catch(NonExistingUserException $e){
+            return response()->json(['error'=>[$e->getMessage()]], $e->getCode());
         }
     }
 
@@ -128,6 +161,18 @@ class UserController extends Controller
                 'password.confirmed' => 'Password and password confirmation doesn\'t match!',
                 'password.min' => 'Password should be at least 6 characters!',
                 'password.max' => 'Password shouldn\'t exceed 255 characters!',
+            ]
+        )->validate();
+    }
+
+    protected function validateResetPassword(Request $request){
+        return Validator::make(
+            [
+                'email'=>['required', 'email']
+            ],
+            [
+                'email.required'=>'No email has been provided!',
+                'email.email'=>'Invalid email format'
             ]
         )->validate();
     }
