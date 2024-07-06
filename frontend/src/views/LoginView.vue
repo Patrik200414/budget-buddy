@@ -2,6 +2,7 @@
 import router from '@/router';
 import axios from 'axios';
 import { ref } from 'vue';
+import { RouterLink } from 'vue-router';
 
 const tokenName = import.meta.env.VITE_AUTH_KEY_NAME;
 
@@ -51,6 +52,7 @@ async function handleSubmit(){
                 <em v-show="isLoading" class="mb-4">Loading ...</em>
                 <em v-for="errorMessage in errorMessages" :key="errorMessage" class="text-danger mb-4">{{errorMessage}}</em>
                 <button type="submit" class="btn btn-primary w-100">Submit</button>
+                <RouterLink to="/registration" class="text-center mt-4">Create account!</RouterLink>
             </form>
         </div>
     </div>
