@@ -13,6 +13,8 @@ class ResetPasswordMail extends Mailable
 {
     use Queueable, SerializesModels;
 
+    protected $url;
+
     /**
      * Create a new message instance.
      */
@@ -40,7 +42,7 @@ class ResetPasswordMail extends Mailable
             markdown: 'mail.reset-password-mail',
         );
 
-        return $email->with(['url'=>$this->url]);
+        return $email->with('url', $this->url);
     }
 
     /**
