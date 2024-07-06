@@ -20,7 +20,7 @@ class UserController extends Controller
     public function registration(Request $request){
         try{
             $this->validateRegistrationInput($request);
-            DB::transaction(function() use ($request){
+           $response = DB::transaction(function() use ($request){
                 $ceatedUser = User::create([
                     'first_name'=>$request->firstName,
                     'last_name'=>$request->lastName,
@@ -34,6 +34,8 @@ class UserController extends Controller
 
                 return response()->json(['message'=>'The regsitration was successfull! Please verify yourself, we have sent you an email where you have to click the verify button!'], 202);
             });
+
+            return $response;
         } catch(ValidationException $e){
             $errorMessages = $this->formatValidationErrorMessage($e);
             return response()->json(['error'=>$errorMessages], 422);
