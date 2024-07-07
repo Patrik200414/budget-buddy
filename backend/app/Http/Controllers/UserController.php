@@ -78,6 +78,7 @@ class UserController extends Controller
                 $passwordResetToken = Uuid::uuid();
 
                 $user->remember_token = $passwordResetToken;
+                $user->password_reset_request_time_at = now();
                 $user->save();
 
                 $resetPasswordUrl = env('PASSWORD_RESET_LINK');
