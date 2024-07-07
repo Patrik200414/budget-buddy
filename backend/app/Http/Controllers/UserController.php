@@ -5,10 +5,13 @@ namespace App\Http\Controllers;
 use App\Exceptions\AlreadyVerifiedException;
 use App\Exceptions\InvalidCredentialsException;
 use App\Exceptions\NonExistingUserException;
+use App\Exceptions\NotRequestedPasswordChange;
 use App\Exceptions\NotVerifiedEmailException;
+use App\Exceptions\PasswordResetTokenExpired;
 use App\Mail\RegistrationVerificationMail;
 use App\Mail\ResetPasswordMail;
 use App\Models\User;
+use Carbon\Carbon;
 use Faker\Provider\Uuid;
 use Hash;
 use Illuminate\Http\Request;
@@ -16,6 +19,7 @@ use Illuminate\Validation\ValidationException;
 use Mail;
 use Validator;
 use \DB;
+use \DateTime;
 
 class UserController extends Controller
 {
@@ -55,7 +59,7 @@ class UserController extends Controller
             if($verification !== null){
                 throw new AlreadyVerifiedException();
             }
-            $verifiedUser->email_verified_at = now();
+            $verifiedUser->email_verified_at = Carbon::now();
             $verifiedUser->save();
 
             return response()->json(['message'=>'User successfully verified! Now you can log into your account!'], 200);
@@ -78,7 +82,7 @@ class UserController extends Controller
                 $passwordResetToken = Uuid::uuid();
 
                 $user->remember_token = $passwordResetToken;
-                $user->password_reset_request_time_at = now();
+                $user->password_reset_request_time_at = Carbon::now();
                 $user->save();
 
                 $resetPasswordUrl = env('PASSWORD_RESET_LINK');
@@ -124,6 +128,32 @@ class UserController extends Controller
         } catch(ValidationException $e){
             $errorMessages = $this->formatValidationErrorMessage($e);
             return response()->json(['error'=>$errorMessages], 422);            
+        }
+    }
+
+    public function verifyPasswordResetToken($passwordResetVerifyToken){
+        try{
+            $user = User::where('remember_token', $passwordResetVerifyToken)->first();
+
+            if(!$user){
+                throw new NotRequestedPasswordChange();
+            }
+
+            $currTime = Carbon::now();
+            $passwordRequestTime = Carbon::parse($user->password_reset_request_time_at);
+
+            $timeDiff = intval($currTime->diff($passwordRequestTime)->format('%i'));
+
+            if($timeDiff > 30){
+                $this->clearPasswordResetToken($user);
+                throw new PasswordResetTokenExpired();
+            }
+
+            return response()->json(['status'=>'Accpeted'], 202);
+        } catch(NotRequestedPasswordChange $e){
+            return response()->json(['error'=>$e->getMessage()], $e->getCode());
+        } catch(PasswordResetTokenExpired $e){
+            return response()->json(['error'=>$e->getMessage()], $e->getCode());
         }
     }
 
@@ -189,5 +219,11 @@ class UserController extends Controller
         }
 
         return $errorMessages;
+    }
+
+    private function clearPasswordResetToken($user){
+        $user->remember_token = null;
+        $user->password_reset_request_time_at = null;
+        $user->save();
     }
 }
