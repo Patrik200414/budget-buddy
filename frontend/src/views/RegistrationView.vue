@@ -2,6 +2,7 @@
 import { RouterLink } from 'vue-router';
 import {ref} from 'vue';
 import axios from 'axios';
+import InformationAlert from '../components/InformationAlert.vue';
 
 const firstName = defineModel('firstName');
 const lastName = defineModel('lastName');
@@ -44,9 +45,7 @@ async function handleSubmit(){
 </script>
 
 <template>
-    <div v-if="information" class="alert alert-primary text-center" role="alert">
-        {{ information }}
-    </div>
+    <InformationAlert :message="information"/>
     <div class="container d-flex justify-content-center align-items-center vh-100">
         <div class="w-50">
             <h1 class="text-center">Registration</h1>

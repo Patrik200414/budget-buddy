@@ -53,6 +53,7 @@ async function handleSubmit(){
                 <em v-for="errorMessage in errorMessages" :key="errorMessage" class="text-danger mb-4">{{errorMessage}}</em>
                 <button type="submit" class="btn btn-primary w-100">Submit</button>
                 <RouterLink to="/registration" class="text-center mt-4">Create account!</RouterLink>
+                <RouterLink to="/password/forget/request" class="text-center mt-4">Forgot password!</RouterLink>
             </form>
         </div>
     </div>

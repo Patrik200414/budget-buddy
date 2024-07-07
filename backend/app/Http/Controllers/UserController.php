@@ -5,15 +5,21 @@ namespace App\Http\Controllers;
 use App\Exceptions\AlreadyVerifiedException;
 use App\Exceptions\InvalidCredentialsException;
 use App\Exceptions\NonExistingUserException;
+use App\Exceptions\NotRequestedPasswordChange;
 use App\Exceptions\NotVerifiedEmailException;
+use App\Exceptions\PasswordResetTokenExpired;
 use App\Mail\RegistrationVerificationMail;
+use App\Mail\ResetPasswordMail;
 use App\Models\User;
+use Carbon\Carbon;
+use Faker\Provider\Uuid;
 use Hash;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Mail;
 use Validator;
 use \DB;
+use \DateTime;
 
 class UserController extends Controller
 {
@@ -28,9 +34,9 @@ class UserController extends Controller
                     'password'=>bcrypt($request->password)
                 ]);
         
-                $verificationUrl = env('EMAIL_VERIFICATION_LINK');
+                $verificationUrl = env('FRONT_END_URL') . '/email/verify/' . $ceatedUser->id;
                 
-                Mail::to($request->email)->send(new RegistrationVerificationMail($verificationUrl . '/' . $ceatedUser->id));
+                Mail::to($request->email)->send(new RegistrationVerificationMail($verificationUrl));
 
                 return response()->json(['message'=>'The regsitration was successfull! Please verify yourself, we have sent you an email where you have to click the verify button!'], 202);
             });
@@ -53,7 +59,7 @@ class UserController extends Controller
             if($verification !== null){
                 throw new AlreadyVerifiedException();
             }
-            $verifiedUser->email_verified_at = now();
+            $verifiedUser->email_verified_at = Carbon::now();
             $verifiedUser->save();
 
             return response()->json(['message'=>'User successfully verified! Now you can log into your account!'], 200);
@@ -61,6 +67,7 @@ class UserController extends Controller
             return response()->json(['error'=>$e->getMessage()], $e->getCode());
         }
     }
+
 
     public function login(Request $request){
         try{
@@ -91,6 +98,96 @@ class UserController extends Controller
             $errorMessages = $this->formatValidationErrorMessage($e);
             return response()->json(['error'=>$errorMessages], 422);            
         }
+    }
+
+    public function resetPasswordRequest(Request $request){
+        try{
+            $this->validateResetPasswordRequest($request);
+
+            $result = DB::transaction(function () use ($request){
+                $user = User::where(['email'=>$request->email])->first();
+
+                if(!$user){
+                    throw new NonExistingUserException();
+                }
+
+                $passwordResetToken = Uuid::uuid();
+
+                $user->remember_token = $passwordResetToken;
+                $user->password_reset_request_time_at = Carbon::now();
+                $user->save();
+
+                $resetPasswordUrl = env('FRONT_END_URL') . '/password/new/' . $passwordResetToken;
+
+                Mail::to($user->email)->send(new ResetPasswordMail($resetPasswordUrl));
+                return response()->json(['message'=>'Please check out your email inboxe! We have sent a password reset link!'], 200);
+            });
+
+            return $result;
+        } catch(ValidationException $e){
+            $errorMessages = $this->formatValidationErrorMessage($e);
+            return response()->json(['error'=>$errorMessages], 422);
+        } catch(NonExistingUserException $e){
+            return response()->json(['error'=>[$e->getMessage()]], $e->getCode());
+        }
+    }
+
+    public function verifyPasswordResetToken($passwordResetVerifyToken){
+        try{
+            $user = User::where('remember_token', $passwordResetVerifyToken)->first();
+
+            if(!$user){
+                throw new NotRequestedPasswordChange();
+            }
+
+            $this->validateResetToken($user);
+
+            return response()->json(['status'=>'Accpeted'], 202);
+        } catch(NotRequestedPasswordChange $e){
+            return response()->json(['error'=>$e->getMessage()], $e->getCode());
+        } catch(PasswordResetTokenExpired $e){
+            return response()->json(['error'=>$e->getMessage()], $e->getCode());
+        }
+    }
+
+    public function resetPassword(Request $request, $resetPasswordToken){
+        try{
+            $this->validateResetPassword($request);
+
+            $user = User::where('remember_token', $resetPasswordToken)->first();
+
+            if(!$user){
+                throw new NotRequestedPasswordChange();
+            }
+
+            $this->validateResetToken($user);
+
+            $user->password = bcrypt($request->password);
+            $user->remember_token = null;
+            $user->password_reset_request_time_at = null;
+            $user->save();
+
+            return response()->json(['message'=>'Password was successfully updated! Pleas try to login!'], 202);
+        } catch(ValidationException $e){
+            return response()->json(['error'=>$e->getMessage()], 422);
+        } catch(NotRequestedPasswordChange $e){
+            return response()->json(['error'=>$e->getMessage()], $e->getCode());
+        }
+    }
+
+    protected function validateResetPassword(Request $request){
+        return Validator::make(
+            $request->all(),
+            [
+                'password'=>['required', 'min:6', 'max:255', 'confirmed']
+            ],
+            [
+                'password.required'=>'Please fill out the password collumn!',
+                'password.min'=>'Password should be at least 6 characters!',
+                'password.max'=>'Password should be upmost 255 characters!',
+                'password.confirmed'=>'Password and password confirmation are not matching!'
+            ]
+        )->validate();
     }
 
     protected function validateLoginInput(Request $request){
@@ -132,6 +229,18 @@ class UserController extends Controller
         )->validate();
     }
 
+    protected function validateResetPasswordRequest(Request $request){
+        return Validator::make(
+            [
+                'email'=>['required', 'email']
+            ],
+            [
+                'email.required'=>'No email has been provided!',
+                'email.email'=>'Invalid email format'
+            ]
+        )->validate();
+    }
+
     protected function formatValidationErrorMessage(ValidationException $e){
         $errors = $e->errors();
 
@@ -143,5 +252,23 @@ class UserController extends Controller
         }
 
         return $errorMessages;
+    }
+
+    private function validateResetToken(User $user){
+        $currTime = Carbon::now();
+        $passwordRequestTime = Carbon::parse($user->password_reset_request_time_at);
+
+        $timeDiff = intval($currTime->diff($passwordRequestTime)->format('%i'));
+
+        if($timeDiff > 30){
+            $this->clearPasswordResetToken($user);
+            throw new PasswordResetTokenExpired();
+        }
+    }
+
+    private function clearPasswordResetToken($user){
+        $user->remember_token = null;
+        $user->password_reset_request_time_at = null;
+        $user->save();
     }
 }

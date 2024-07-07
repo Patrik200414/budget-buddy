@@ -7,3 +7,6 @@ use Illuminate\Support\Facades\Route;
 Route::post('/user/registration', [UserController::class, 'registration']);
 Route::get('/user/email/verify/{userId}', [UserController::class, 'verifyRegistration']);
 Route::post('/user/login', [UserController::class, 'login']);
+Route::post('/user/password/reset', [UserController::class, 'resetPasswordRequest']);
+Route::get('/user/password/reset/verify/{passwordResetVerifyToken}', [UserController::class, 'verifyPasswordResetToken']);
+Route::put('/user/password/reset/{resetPasswordToken}', [UserController::class, 'resetPassword']);

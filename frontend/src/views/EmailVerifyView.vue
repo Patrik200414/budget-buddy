@@ -9,7 +9,6 @@ const errorMessage = ref();
 
 onBeforeMount(async () => {
     try{
-
         const userId = router.currentRoute.value.params.userId;
         const verificationResponse = await axios.get(`http://localhost:8000/api/user/email/verify/${userId}`, {}, {
             headers: {
