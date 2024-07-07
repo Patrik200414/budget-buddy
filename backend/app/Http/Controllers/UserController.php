@@ -34,9 +34,9 @@ class UserController extends Controller
                     'password'=>bcrypt($request->password)
                 ]);
         
-                $verificationUrl = env('EMAIL_VERIFICATION_LINK');
+                $verificationUrl = env('FRONT_END_URL') . '/email/verify/' . $ceatedUser->id;
                 
-                Mail::to($request->email)->send(new RegistrationVerificationMail($verificationUrl . '/' . $ceatedUser->id));
+                Mail::to($request->email)->send(new RegistrationVerificationMail($verificationUrl));
 
                 return response()->json(['message'=>'The regsitration was successfull! Please verify yourself, we have sent you an email where you have to click the verify button!'], 202);
             });
@@ -68,37 +68,6 @@ class UserController extends Controller
         }
     }
 
-    public function resetPasswordRequest(Request $request){
-        try{
-            $this->validateResetPasswordRequest($request);
-
-            $result = DB::transaction(function () use ($request){
-                $user = User::where(['email'=>$request->email])->first();
-
-                if(!$user){
-                    throw new NonExistingUserException();
-                }
-
-                $passwordResetToken = Uuid::uuid();
-
-                $user->remember_token = $passwordResetToken;
-                $user->password_reset_request_time_at = Carbon::now();
-                $user->save();
-
-                $resetPasswordUrl = env('PASSWORD_RESET_LINK');
-
-                Mail::to($user->email)->send(new ResetPasswordMail($resetPasswordUrl . '/' . $passwordResetToken));
-                return response()->json(['message'=>'Please check out your email inboxe! We have sent a password reset link!'], 200);
-            });
-
-            return $result;
-        } catch(ValidationException $e){
-            $errorMessages = $this->formatValidationErrorMessage($e);
-            return response()->json(['error'=>$errorMessages], 422);
-        } catch(NonExistingUserException $e){
-            return response()->json(['error'=>[$e->getMessage()]], $e->getCode());
-        }
-    }
 
     public function login(Request $request){
         try{
@@ -128,6 +97,38 @@ class UserController extends Controller
         } catch(ValidationException $e){
             $errorMessages = $this->formatValidationErrorMessage($e);
             return response()->json(['error'=>$errorMessages], 422);            
+        }
+    }
+
+    public function resetPasswordRequest(Request $request){
+        try{
+            $this->validateResetPasswordRequest($request);
+
+            $result = DB::transaction(function () use ($request){
+                $user = User::where(['email'=>$request->email])->first();
+
+                if(!$user){
+                    throw new NonExistingUserException();
+                }
+
+                $passwordResetToken = Uuid::uuid();
+
+                $user->remember_token = $passwordResetToken;
+                $user->password_reset_request_time_at = Carbon::now();
+                $user->save();
+
+                $resetPasswordUrl = env('FRONT_END_URL') . '/password/new/' . $passwordResetToken;
+
+                Mail::to($user->email)->send(new ResetPasswordMail($resetPasswordUrl));
+                return response()->json(['message'=>'Please check out your email inboxe! We have sent a password reset link!'], 200);
+            });
+
+            return $result;
+        } catch(ValidationException $e){
+            $errorMessages = $this->formatValidationErrorMessage($e);
+            return response()->json(['error'=>$errorMessages], 422);
+        } catch(NonExistingUserException $e){
+            return response()->json(['error'=>[$e->getMessage()]], $e->getCode());
         }
     }
 
