@@ -68,9 +68,9 @@ class UserController extends Controller
         }
     }
 
-    public function resetPassword(Request $request){
+    public function resetPasswordRequest(Request $request){
         try{
-            $this->validateResetPassword($request);
+            $this->validateResetPasswordRequest($request);
 
             $result = DB::transaction(function () use ($request){
                 $user = User::where(['email'=>$request->email])->first();
@@ -139,15 +139,7 @@ class UserController extends Controller
                 throw new NotRequestedPasswordChange();
             }
 
-            $currTime = Carbon::now();
-            $passwordRequestTime = Carbon::parse($user->password_reset_request_time_at);
-
-            $timeDiff = intval($currTime->diff($passwordRequestTime)->format('%i'));
-
-            if($timeDiff > 30){
-                $this->clearPasswordResetToken($user);
-                throw new PasswordResetTokenExpired();
-            }
+            $this->validateResetToken($user);
 
             return response()->json(['status'=>'Accpeted'], 202);
         } catch(NotRequestedPasswordChange $e){
@@ -155,6 +147,46 @@ class UserController extends Controller
         } catch(PasswordResetTokenExpired $e){
             return response()->json(['error'=>$e->getMessage()], $e->getCode());
         }
+    }
+
+    public function resetPassword(Request $request, $resetPasswordToken){
+        try{
+            $this->validateResetPassword($request);
+
+            $user = User::where('remember_token', $resetPasswordToken)->first();
+
+            if(!$user){
+                throw new NotRequestedPasswordChange();
+            }
+
+            $this->validateResetToken($user);
+
+            $user->password = bcrypt($request->password);
+            $user->remember_token = null;
+            $user->password_reset_request_time_at = null;
+            $user->save();
+
+            return response()->json(['message'=>'Password was successfully updated! Pleas try to login!'], 202);
+        } catch(ValidationException $e){
+            return response()->json(['error'=>$e->getMessage()], 422);
+        } catch(NotRequestedPasswordChange $e){
+            return response()->json(['error'=>$e->getMessage()], $e->getCode());
+        }
+    }
+
+    protected function validateResetPassword(Request $request){
+        return Validator::make(
+            $request->all(),
+            [
+                'password'=>['required', 'min:6', 'max:255', 'confirmed']
+            ],
+            [
+                'password.required'=>'Please fill out the password collumn!',
+                'password.min'=>'Password should be at least 6 characters!',
+                'password.max'=>'Password should be upmost 255 characters!',
+                'password.confirmed'=>'Password and password confirmation are not matching!'
+            ]
+        )->validate();
     }
 
     protected function validateLoginInput(Request $request){
@@ -196,7 +228,7 @@ class UserController extends Controller
         )->validate();
     }
 
-    protected function validateResetPassword(Request $request){
+    protected function validateResetPasswordRequest(Request $request){
         return Validator::make(
             [
                 'email'=>['required', 'email']
@@ -219,6 +251,18 @@ class UserController extends Controller
         }
 
         return $errorMessages;
+    }
+
+    private function validateResetToken(User $user){
+        $currTime = Carbon::now();
+        $passwordRequestTime = Carbon::parse($user->password_reset_request_time_at);
+
+        $timeDiff = intval($currTime->diff($passwordRequestTime)->format('%i'));
+
+        if($timeDiff > 30){
+            $this->clearPasswordResetToken($user);
+            throw new PasswordResetTokenExpired();
+        }
     }
 
     private function clearPasswordResetToken($user){
