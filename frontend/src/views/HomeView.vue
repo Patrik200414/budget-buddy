@@ -1,6 +1,8 @@
 <script setup>
 import router from '@/router';
 import { onBeforeMount } from 'vue';
+import Navbar from '@/components/Navbar.vue';
+
 onBeforeMount(() => {
   const tokenName = import.meta.env.VITE_AUTH_KEY_NAME;
 
@@ -12,5 +14,6 @@ onBeforeMount(() => {
 </script>
 
 <template>
+  <Navbar />
   <h1>Home page!</h1>
 </template>
