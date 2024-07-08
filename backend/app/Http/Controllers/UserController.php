@@ -65,7 +65,7 @@ class UserController extends Controller
 
             return response()->json(['message'=>'User successfully verified! Now you can log into your account!'], 200);
         } catch(NonExistingUserException | AlreadyVerifiedException $e){
-            return response()->json(['error'=>$e->getMessage()], $e->getCode());
+            return response()->json(['errors'=>$e->getMessage()], $e->getCode());
         }
     }
 
@@ -92,7 +92,9 @@ class UserController extends Controller
                 $authenticationTokenName=>$token
             ], 202);
         } catch(InvalidCredentialsException | NotVerifiedEmailException $e){
-            return response()->json(['error'=>[$e->getMessage()]], $e->getCode());
+            return response()->json(['errors'=>[
+                'message'=>[$e->getMessage()]
+            ]], $e->getCode());
         }
     }
 
@@ -119,7 +121,7 @@ class UserController extends Controller
 
             return $result;
         } catch(NonExistingUserException $e){
-            return response()->json(['error'=>[$e->getMessage()]], $e->getCode());
+            return response()->json(['errors'=>[$e->getMessage()]], $e->getCode());
         }
     }
 
@@ -135,7 +137,7 @@ class UserController extends Controller
 
             return response()->json(['status'=>'Accpeted'], 202);
         } catch(NotRequestedPasswordChange | PasswordResetTokenExpired $e){
-            return response()->json(['error'=>$e->getMessage()], $e->getCode());
+            return response()->json(['errors'=>$e->getMessage()], $e->getCode());
         }
     }
 
@@ -156,7 +158,7 @@ class UserController extends Controller
 
             return response()->json(['message'=>'Password was successfully updated! Pleas try to login!'], 202);
         } catch(NotRequestedPasswordChange $e){
-            return response()->json(['error'=>$e->getMessage()], $e->getCode());
+            return response()->json(['errors'=>$e->getMessage()], $e->getCode());
         }
     }
 
@@ -175,7 +177,7 @@ class UserController extends Controller
 
             return response()->json(['status'=>'User updated'], 202);
         } catch(InvalidPreviousPasswordException $e){
-            return response()->json(['error'=>[$e->getMessage()]], $e->getCode());
+            return response()->json(['errors'=>[$e->getMessage()]], $e->getCode());
         }
     }
 

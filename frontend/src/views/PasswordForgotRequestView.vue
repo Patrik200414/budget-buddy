@@ -2,6 +2,7 @@
 import axios from 'axios';
 import {ref} from 'vue';
 import InformationAlert from '../components/InformationAlert.vue'
+import {formatErrorMessages} from '../utility/utility';
 
 const email = defineModel('email');
 
@@ -25,7 +26,8 @@ async function handleSubmit(){
         information.value = passwordResetRequestResponse.data.message;
         isDisabled.value = true;
     } catch(error){
-        errorMessages.value = error.response.data.error;
+        const errors = formatErrorMessages(error);
+        errorMessages.value = errors;
     } finally{
         isLoading.value = false;
     }
