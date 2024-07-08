@@ -16,6 +16,7 @@ use Faker\Provider\Uuid;
 use Hash;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use Laravel\Sanctum\PersonalAccessToken;
 use Mail;
 use Validator;
 use \DB;
@@ -25,7 +26,7 @@ class UserController extends Controller
 {
     public function registration(Request $request){
         try{
-            $this->validateRegistrationInput($request);
+            $this->validateUserProfileInput($request);
            $response = DB::transaction(function() use ($request){
                 $ceatedUser = User::create([
                     'first_name'=>$request->firstName,
@@ -45,7 +46,7 @@ class UserController extends Controller
         } catch(ValidationException $e){
             $errorMessages = $this->formatValidationErrorMessage($e);
             return response()->json(['error'=>$errorMessages], 422);
-        }    
+        }
     }
 
     public function verifyRegistration($userId){
@@ -175,6 +176,27 @@ class UserController extends Controller
         }
     }
 
+    public function updateUser(Request $request){
+        try{
+            $this->validateUserProfileInput($request);
+
+            $bearerToken = $request->bearerToken();
+            $token = PersonalAccessToken::findToken($bearerToken);
+            $user = $token->tokenable;
+
+            $user->first_name = $request->firstName;
+            $user->last_name = $request->lastName;
+            $user->email = $request->email;
+            $user->password = bcrypt($request->password);
+            $user->save();
+
+            return response()->json(['status'=>'User updated'], 202);
+        } catch(ValidationException $e){
+            $errorMessages = $this->formatValidationErrorMessage($e);
+            return response()->json(['error'=>$errorMessages], 422);
+        }
+    }
+
     protected function validateResetPassword(Request $request){
         return Validator::make(
             $request->all(),
@@ -207,7 +229,7 @@ class UserController extends Controller
         )->validate();
     }
 
-    protected function validateRegistrationInput(Request $request){
+    protected function validateUserProfileInput(Request $request){
         return Validator::make(
             $request->all(), 
             [
