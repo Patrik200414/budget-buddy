@@ -2,6 +2,8 @@
 import {onBeforeMount, ref} from 'vue';
 import axios from 'axios';
 import router from '@/router';
+import {formatErrorMessages} from '../utility/utility';
+
 
 const isVerified = ref(false);
 const errorMessage = ref();
@@ -12,7 +14,7 @@ const isDisabled = ref(false);
 const password = defineModel('password');
 const reEnterPassword = defineModel('reEnterPassword');
 
-const passwordChangeErrorMessage = ref();
+const passwordChangeErrorMessages = ref();
 const isPasswordChangeLoading = ref(false);
 const passwordUpdateInformation = ref('');
 
@@ -31,7 +33,7 @@ onBeforeMount(async () => {
             isVerified.value = true;
         }
     } catch(error){
-        errorMessage.value = error.response.data.error;
+        errorMessage.value = error.response.data.errors;
     } finally{
         isVerificationLoading.value = false;
     }
@@ -40,6 +42,7 @@ onBeforeMount(async () => {
 async function handleSubmit(){
     try{
         isPasswordChangeLoading.value = true;
+        passwordChangeErrorMessages.value = [];
         const passwordChangeResponse = await axios.put(`/api/user/password/reset/${resetPasswordToken.value}`, {
             password: password.value,
             password_confirmation: reEnterPassword.value
@@ -49,7 +52,8 @@ async function handleSubmit(){
         passwordUpdateInformation.value = passwordChangeResponse.data.message;
         isDisabled.value = true;
     } catch(error){
-        passwordChangeErrorMessage.value = error.response.data.error;
+        const errors = formatErrorMessages(error)
+        passwordChangeErrorMessages.value = errors;
     } finally{
         isPasswordChangeLoading.value = false;
     }
@@ -80,7 +84,7 @@ async function handleSubmit(){
                     <input :disabled="isDisabled" v-model="reEnterPassword" type="password" class="form-control" id="reEnterPassword" placeholder="Re-enter password">
                 </div>
                 <em v-show="isPasswordChangeLoading" class="mb-4">Loading ...</em>
-                <em v-if="passwordChangeErrorMessage" class="text-danger mb-4">{{passwordChangeErrorMessage}}</em>
+                <em v-for="passwordChangeErrorMessage in passwordChangeErrorMessages" class="text-danger mb-4">{{passwordChangeErrorMessage}}</em>
                 <div v-if="passwordUpdateInformation" class="m-4 text-center">
                     <em class="text-center">{{passwordUpdateInformation}}</em>
                     <RouterLink to="/login" class="text-center mt-4">

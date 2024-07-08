@@ -3,6 +3,7 @@ import { RouterLink } from 'vue-router';
 import {ref} from 'vue';
 import axios from 'axios';
 import InformationAlert from '../components/InformationAlert.vue';
+import {formatErrorMessages} from '../utility/utility';
 
 const firstName = defineModel('firstName');
 const lastName = defineModel('lastName');
@@ -34,7 +35,8 @@ async function handleSubmit(){
 
         information.value = registrationInformation.data.message;
     } catch(error){
-        errorMessages.value = error.response.data.error;
+        const errors = formatErrorMessages(error);
+        errorMessages.value = errors;
         isInputsDisabled.value = false;
     } finally{
         isLoading.value = false;

@@ -3,6 +3,7 @@ import router from '@/router';
 import axios from 'axios';
 import { ref } from 'vue';
 import { RouterLink } from 'vue-router';
+import {formatErrorMessages} from '../utility/utility';
 
 const tokenName = import.meta.env.VITE_AUTH_KEY_NAME;
 
@@ -27,9 +28,8 @@ async function handleSubmit(){
         localStorage.setItem(tokenName, JSON.stringify(data));
         router.push('/');
     } catch(error){
-        const responseMessage = error.response.data.error;
-        console.log(error);
-        errorMessages.value = responseMessage;
+        const errors = formatErrorMessages(error);
+        errorMessages.value = errors;
     } finally{
         isLoading.value = false;
     }
