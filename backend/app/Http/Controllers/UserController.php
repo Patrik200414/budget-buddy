@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\AlreadyVerifiedException;
 use App\Exceptions\InvalidCredentialsException;
+use App\Exceptions\InvalidPreviousPasswordException;
 use App\Exceptions\NonExistingUserException;
 use App\Exceptions\NotRequestedPasswordChange;
 use App\Exceptions\NotVerifiedEmailException;
@@ -26,8 +27,8 @@ class UserController extends Controller
 {
     public function registration(Request $request){
         try{
-            $this->validateUserProfileInput($request);
-           $response = DB::transaction(function() use ($request){
+            $this->validateRegistrationInput($request);
+            $response = DB::transaction(function() use ($request){
                 $ceatedUser = User::create([
                     'first_name'=>$request->firstName,
                     'last_name'=>$request->lastName,
@@ -178,20 +179,25 @@ class UserController extends Controller
 
     public function updateUser(Request $request){
         try{
-            $this->validateUserProfileInput($request);
+            $this->validateUserUpdateInformationInputRequest($request);
 
             $user = $this->getUserFromBearerToken($request);
+            if(!Hash::check($request->previousPassword, $user->password)){
+                throw new InvalidPreviousPasswordException();
+            }
 
             $user->first_name = $request->firstName;
             $user->last_name = $request->lastName;
             $user->email = $request->email;
-            $user->password = bcrypt($request->password);
+            $user->password = bcrypt($request->newPassword);
             $user->save();
 
             return response()->json(['status'=>'User updated'], 202);
         } catch(ValidationException $e){
             $errorMessages = $this->formatValidationErrorMessage($e);
             return response()->json(['error'=>$errorMessages], 422);
+        } catch(InvalidPreviousPasswordException $e){
+            return response()->json(['error'=>[$e->getMessage()]], $e->getCode());
         }
     }
 
@@ -237,7 +243,7 @@ class UserController extends Controller
         )->validate();
     }
 
-    protected function validateUserProfileInput(Request $request){
+    protected function validateRegistrationInput(Request $request){
         return Validator::make(
             $request->all(), 
             [
@@ -257,6 +263,31 @@ class UserController extends Controller
                 'password.max' => 'Password shouldn\'t exceed 255 characters!',
             ]
         )->validate();
+    }
+
+    protected function validateUserUpdateInformationInputRequest(Request $request){
+        return Validator::make(
+            $request->all(), 
+            [
+                'firstName'=>['required', 'min:2', 'max:255'],
+                'lastName'=>['required', 'min:2', 'max:255'],
+                'email'=>['required', 'email'],
+                'previousPassword'=>['required', 'min:6', 'max:255'],
+                'password'=>['required', 'confirmed', 'min:6', 'max:255'],
+            ],
+            [
+                'firstName.min' => 'First name should be at least 2 characters!',
+                'firstName.max' => 'First name shouldn\'t exceed 255 characters!',
+                'lastName.min' => 'Last name should be at least 2 characters!',
+                'lastName.max' => 'Last name shouldn\'t exceed 255 characters!',
+                'email.email' => 'Email should be in email format!',
+                'password.confirmed' => 'New password and password confirmation doesn\'t match!',
+                'password.min' => 'New password should be at least 6 characters!',
+                'password.max' => 'New password shouldn\'t exceed 255 characters!',
+                'previousPassword.min' => 'New password should be at least 6 characters!',
+                'previousPassword.max' => 'New password shouldn\'t exceed 255 characters!',
+            ]
+        );
     }
 
     protected function validateResetPasswordRequest(Request $request){
