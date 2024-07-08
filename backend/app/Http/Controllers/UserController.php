@@ -180,9 +180,7 @@ class UserController extends Controller
         try{
             $this->validateUserProfileInput($request);
 
-            $bearerToken = $request->bearerToken();
-            $token = PersonalAccessToken::findToken($bearerToken);
-            $user = $token->tokenable;
+            $user = $this->getUserFromBearerToken($request);
 
             $user->first_name = $request->firstName;
             $user->last_name = $request->lastName;
@@ -195,6 +193,16 @@ class UserController extends Controller
             $errorMessages = $this->formatValidationErrorMessage($e);
             return response()->json(['error'=>$errorMessages], 422);
         }
+    }
+
+    public function getUserInformation(Request $request){
+        $user = $this->getUserFromBearerToken($request);
+        return response()->json(['user'=>[
+            'id'=> $user->id,
+            'firstName'=>$user->first_name,
+            'lastName'=>$user->last_name,
+            'email'=>$user->email,
+        ]], 200);
     }
 
     protected function validateResetPassword(Request $request){
@@ -292,5 +300,11 @@ class UserController extends Controller
         $user->remember_token = null;
         $user->password_reset_request_time_at = null;
         $user->save();
+    }
+
+    private function getUserFromBearerToken(Request $request){
+        $bearerToken = $request->bearerToken();
+        $token = PersonalAccessToken::findToken($bearerToken);
+        return $token->tokenable;
     }
 }

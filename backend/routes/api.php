@@ -13,4 +13,5 @@ Route::put('/user/password/reset/{resetPasswordToken}', [UserController::class, 
 
 Route::group(['middleware'=>'auth:sanctum'], function(){
     Route::put('/user/update', [UserController::class, 'updateUser']);
+    Route::get('/user', [UserController::class, 'getUserInformation']);
 });
