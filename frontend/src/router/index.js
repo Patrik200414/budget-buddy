@@ -6,6 +6,7 @@ import EmailVerifyView from '../views/EmailVerifyView.vue';
 import PasswordForgotRequestView from '../views/PasswordForgotRequestView.vue';
 import ForgetPasswordNewPasswordView from '../views/ForgetPasswordNewPasswordView.vue';
 import Navbar from '@/components/Navbar.vue';
+import ProfileUpdateView from '@/views/ProfileUpdateView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -17,6 +18,10 @@ const router = createRouter({
         {
           path: '',
           component: HomeView
+        },
+        {
+          path: '/profile',
+          component: ProfileUpdateView
         }
       ]
     },

@@ -89,7 +89,8 @@ class UserController extends Controller
                 'id'=>$user->id,
                 'firstName'=>$user->first_name,
                 'lastName'=>$user->last_name,
-                $authenticationTokenName=>$token
+                $authenticationTokenName=>$token,
+                'email'=>$user->email
             ], 202);
         } catch(InvalidCredentialsException | NotVerifiedEmailException $e){
             return response()->json(['errors'=>[
