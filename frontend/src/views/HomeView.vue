@@ -14,6 +14,5 @@ onBeforeMount(() => {
 </script>
 
 <template>
-  <Navbar />
   <h1>Home page!</h1>
 </template>

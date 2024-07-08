@@ -25,13 +25,11 @@ function logout(){
                     <RouterLink class="nav-link" to="/account/create">Create account</RouterLink>
                 </li>
                 <li class="nav-item">
-                    <RouterLink class="nav-link" to="/account/create">Profile</RouterLink>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#">Pricing</a>
+                    <RouterLink class="nav-link" to="/profile">Profile</RouterLink>
                 </li>
             </ul>
             <button @click="logout" class="btn btn-dark align-self-end">Logout <font-awesome-icon :icon="faRightFromBracket" /></button>
         </div>
     </nav>
+    <RouterView />
 </template>
