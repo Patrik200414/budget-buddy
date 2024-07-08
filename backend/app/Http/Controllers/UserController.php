@@ -17,6 +17,7 @@ use App\Http\Requests\UserUpdateInformationRequest;
 use App\Mail\RegistrationVerificationMail;
 use App\Mail\ResetPasswordMail;
 use App\Models\User;
+use App\ResetToken;
 use Carbon\Carbon;
 use Faker\Provider\Uuid;
 use Hash;
@@ -27,6 +28,8 @@ use \DB;
 
 class UserController extends Controller
 {
+    use ResetToken;
+
     public function registration(RegistrationRequest $request){
         $response = DB::transaction(function() use ($request){
             $ceatedUser = User::create([
@@ -186,23 +189,6 @@ class UserController extends Controller
         ]], 200);
     }
 
-    private function validateResetToken(User $user){
-        $currTime = Carbon::now();
-        $passwordRequestTime = Carbon::parse($user->password_reset_request_time_at);
-
-        $timeDiff = intval($currTime->diff($passwordRequestTime)->format('%i'));
-
-        if($timeDiff > 30){
-            $this->clearPasswordResetToken($user);
-            throw new PasswordResetTokenExpired();
-        }
-    }
-
-    private function clearPasswordResetToken($user){
-        $user->remember_token = null;
-        $user->password_reset_request_time_at = null;
-        $user->save();
-    }
 
     private function getUserFromBearerToken(Request $request){
         $bearerToken = $request->bearerToken();
