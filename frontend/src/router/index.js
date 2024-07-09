@@ -5,14 +5,25 @@ import RegistrationView from '../views/RegistrationView.vue';
 import EmailVerifyView from '../views/EmailVerifyView.vue';
 import PasswordForgotRequestView from '../views/PasswordForgotRequestView.vue';
 import ForgetPasswordNewPasswordView from '../views/ForgetPasswordNewPasswordView.vue';
+import Navbar from '@/components/Navbar.vue';
+import ProfileUpdateView from '@/views/ProfileUpdateView.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomeView
+      component: Navbar,
+      children: [
+        {
+          path: '',
+          component: HomeView
+        },
+        {
+          path: '/profile',
+          component: ProfileUpdateView
+        }
+      ]
     },
     {
       path: '/login',

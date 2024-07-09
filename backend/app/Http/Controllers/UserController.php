@@ -36,7 +36,7 @@ class UserController extends Controller
                 'first_name'=>$request->firstName,
                 'last_name'=>$request->lastName,
                 'email'=>$request->email,
-                'password'=>bcrypt($request->password)
+                'password'=>$request->password
             ]);
     
             $verificationUrl = env('FRONT_END_URL') . '/email/verify/' . $ceatedUser->id;
@@ -73,7 +73,6 @@ class UserController extends Controller
     public function login(LoginRequest $request){
         try{
             $user = User::where('email', $request->email)->first();
-
             if(!$user || !Hash::check($request->password, $user->password)){
                 throw new InvalidCredentialsException();
             }
@@ -89,7 +88,8 @@ class UserController extends Controller
                 'id'=>$user->id,
                 'firstName'=>$user->first_name,
                 'lastName'=>$user->last_name,
-                $authenticationTokenName=>$token
+                $authenticationTokenName=>$token,
+                'email'=>$user->email
             ], 202);
         } catch(InvalidCredentialsException | NotVerifiedEmailException $e){
             return response()->json(['errors'=>[
@@ -151,7 +151,7 @@ class UserController extends Controller
 
             $this->validateResetToken($user);
 
-            $user->password = bcrypt($request->password);
+            $user->password = $request->password;
             $user->remember_token = null;
             $user->password_reset_request_time_at = null;
             $user->save();
@@ -172,10 +172,21 @@ class UserController extends Controller
             $user->first_name = $request->firstName;
             $user->last_name = $request->lastName;
             $user->email = $request->email;
-            $user->password = bcrypt($request->newPassword);
+            $user->password = $request->password; 
             $user->save();
 
-            return response()->json(['status'=>'User updated'], 202);
+            $authenticationTokenName = env('AUTH_KEY_NAME');
+
+            return response()->json([
+                'user'=>[
+                    'firstName'=>$user->first_name,
+                    'lastName'=>$user->last_name,
+                    'email'=> $user->email,
+                    'id'=>$user->id,
+                    $authenticationTokenName=>$request->bearerToken()
+                ],
+                'status'=>'User updated'
+            ], 202);
         } catch(InvalidPreviousPasswordException $e){
             return response()->json(['errors'=>[$e->getMessage()]], $e->getCode());
         }
