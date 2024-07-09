@@ -8,7 +8,8 @@ const tokenName = import.meta.env.VITE_AUTH_KEY_NAME;
 
 const props = defineProps({
     currUser: Object,
-    onUpdateUser: Function
+    onUpdateUser: Function,
+    onEditProfile: Function
 });
 
 const firstName = ref(props.currUser.firstName);
@@ -21,8 +22,6 @@ const passwordConfirmation = ref();
 const isLoading = ref(false);
 const errorMessages = ref([]);
 const isInputsDisabled = ref(false);
-const status = ref();
-const isCreatedAlertVisible = ref(false);
 
 async function handleSubmit(){
     try{
@@ -57,12 +56,10 @@ async function handleSubmit(){
 }
 
 function setValuesToResponse(userUpdateResponse){
-    isCreatedAlertVisible.value = true;
     const updatedUser = userUpdateResponse.data.user;
-    status.value = userUpdateResponse.data.status;
     localStorage.setItem(tokenName, JSON.stringify(updatedUser));
     props.onUpdateUser(updatedUser);
-    setTimeout(() => isCreatedAlertVisible.value = false, 3000);
+    props.onEditProfile()
 }
 
 function emptyPasswordInformations(){
@@ -74,9 +71,6 @@ function emptyPasswordInformations(){
 </script>
 
 <template>
-    <div v-if="isCreatedAlertVisible" class="alert alert-success text-center" role="alert">
-        {{ status }}!
-    </div>
     <div class="container d-flex justify-content-center align-items-center">
         <div class="w-75">
             <form v-if="props.currUser" @submit.prevent="handleSubmit" class="d-flex flex-column align-items-center">
@@ -107,6 +101,7 @@ function emptyPasswordInformations(){
                 <em v-show="isLoading" class="mb-4">Loading ...</em>
                 <em v-for="errorMessage in errorMessages" :key="errorMessage" class="text-danger mb-4">{{errorMessage}}</em>
                 <button :disabled="isInputsDisabled" type="submit" class="btn btn-primary w-100">Update!</button>
+                <button @click="onEditProfile" :disabled="isInputsDisabled" type="button" class="btn btn-secondary w-100 mt-2">Cancel!</button>
             </form>
         </div>
     </div>
