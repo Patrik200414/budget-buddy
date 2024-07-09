@@ -5,13 +5,17 @@ import ProfileInformationUpdateForm from '../components/ProfileInformationUpdate
 
 const tokenName = import.meta.env.VITE_AUTH_KEY_NAME;
 const currUser = ref(JSON.parse(localStorage.getItem(tokenName)));
+
+function handleUpdateValue(updatedUser){
+    currUser.value = updatedUser;
+}
 </script>
 
 <template>
     <div class="container d-flex justify-content-center align-items-center mt-5">
         <div class="w-50">
             <h1 class="text-center">Profile</h1>
-            <ProfileInformationUpdateForm :currUser="currUser"/>
+            <ProfileInformationUpdateForm :onUpdateUser="handleUpdateValue" :currUser="currUser"/>
             <!-- <ProfileInformations :currUser="currUser"/> -->
         </div>
     </div>

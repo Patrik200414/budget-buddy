@@ -4,8 +4,11 @@ import { ref } from 'vue';
 import {formatErrorMessages} from '../utility/utility';
 
 
+const tokenName = import.meta.env.VITE_AUTH_KEY_NAME;
+
 const props = defineProps({
-    currUser: Object
+    currUser: Object,
+    onUpdateUser: Function
 });
 
 const firstName = ref(props.currUser.firstName);
@@ -18,9 +21,13 @@ const passwordConfirmation = ref();
 const isLoading = ref(false);
 const errorMessages = ref([]);
 const isInputsDisabled = ref(false);
+const status = ref();
+const isCreatedAlertVisible = ref(false);
 
 async function handleSubmit(){
     try{
+        isLoading.value = true;
+        isInputsDisabled.value = true;
         const userUpdate = {
             firstName: firstName.value,
             lastName: lastName.value,
@@ -30,8 +37,6 @@ async function handleSubmit(){
             password_confirmation: passwordConfirmation.value
         }
 
-        console.log(userUpdate);
-
         const userUpdateResponse = await axios.put('/api/user/update', userUpdate, {
             headers: {
                 Accept: 'application/json',
@@ -39,16 +44,39 @@ async function handleSubmit(){
             }
         });
 
-        console.log(userUpdateResponse);
+        setValuesToResponse(userUpdateResponse);
+        emptyPasswordInformations();
     } catch(error){
+        console.log(error)
         const errors = formatErrorMessages(error);
         errorMessages.value = errors;
+    } finally{
+        isLoading.value = false;
+        isInputsDisabled.value = false;
     }
+}
+
+function setValuesToResponse(userUpdateResponse){
+    isCreatedAlertVisible.value = true;
+    const updatedUser = userUpdateResponse.data.user;
+    status.value = userUpdateResponse.data.status;
+    localStorage.setItem(tokenName, JSON.stringify(updatedUser));
+    props.onUpdateUser(updatedUser);
+    setTimeout(() => isCreatedAlertVisible.value = false, 3000);
+}
+
+function emptyPasswordInformations(){
+    previousPassword.value = '';
+    password.value = '';
+    passwordConfirmation.value = '';
 }
 
 </script>
 
 <template>
+    <div v-if="isCreatedAlertVisible" class="alert alert-success text-center" role="alert">
+        {{ status }}!
+    </div>
     <div class="container d-flex justify-content-center align-items-center">
         <div class="w-75">
             <form v-if="props.currUser" @submit.prevent="handleSubmit" class="d-flex flex-column align-items-center">
