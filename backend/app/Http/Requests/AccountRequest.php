@@ -20,5 +20,4 @@ abstract class AccountRequest extends FormRequest
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
     abstract public function rules(): array;
-    abstract public function messages(): array;
 }
