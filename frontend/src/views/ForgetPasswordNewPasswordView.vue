@@ -47,8 +47,7 @@ async function handleSubmit(){
             password: password.value,
             password_confirmation: reEnterPassword.value
         });
-
-        
+      
         passwordUpdateInformation.value = passwordChangeResponse.data.message;
         isDisabled.value = true;
     } catch(error){
