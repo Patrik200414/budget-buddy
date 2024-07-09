@@ -18,17 +18,17 @@ use App\Mail\RegistrationVerificationMail;
 use App\Mail\ResetPasswordMail;
 use App\Models\User;
 use App\ResetToken;
+use App\UserFromBearerToken;
 use Carbon\Carbon;
 use Faker\Provider\Uuid;
 use Hash;
 use Illuminate\Http\Request;
-use Laravel\Sanctum\PersonalAccessToken;
 use Mail;
 use \DB;
 
 class UserController extends Controller
 {
-    use ResetToken;
+    use ResetToken, UserFromBearerToken;
 
     public function registration(RegistrationRequest $request){
         $response = DB::transaction(function() use ($request){
@@ -202,10 +202,4 @@ class UserController extends Controller
         ]], 200);
     }
 
-
-    private function getUserFromBearerToken(Request $request){
-        $bearerToken = $request->bearerToken();
-        $token = PersonalAccessToken::findToken($bearerToken);
-        return $token->tokenable;
-    }
 }
