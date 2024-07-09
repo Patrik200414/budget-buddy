@@ -14,7 +14,8 @@ return new class extends Migration
     {
         Schema::create('debit_accounts', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->foreignIdFor(User::class, 'user_id');
+            $table->uuid('user_id');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->string('account_name');
             $table->double('balance');
             $table->boolean('is_account_blocked');
