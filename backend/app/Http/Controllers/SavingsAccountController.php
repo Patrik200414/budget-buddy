@@ -14,19 +14,6 @@ class SavingsAccountController extends AccountController
     public function createAccount(AccountRequest $request){
         $user = $this->getUserFromBearerToken($request);
 
-        /* SavingAccount::create([
-            'user_id'=>$user->id,
-            'account_name'=>$request->accountName,
-            'balance'=>$request->balance,
-            'is_account_blocked'=>false,
-            'account_number'=>$request->accountNumber,
-            'monthly_interest'=>$request->monthlyInterest,
-            'monthly_maintenance_fee'=>$request->monthlyMaintenanceFee,
-            'transaction_fee'=>$request->transactionFee,
-            'last_interest_paied_at'=>$request->lastInterestPaiedAt,
-            'last_monthly_fee_paid_at'=>$request->lastMonthlyFeePaidAt
-        ]); */
-
         $account = new SavingAccount();
         $account->user_id = $user->id;
         $account->account_name= $request->accountName;
@@ -44,7 +31,6 @@ class SavingsAccountController extends AccountController
         $account->limit_exceeding_fee = $request->limitExceedingFee;
 
         $account->save();
-        /* return response()->json(['test'=>$account]); */
         return response()->json(['status'=>'Account successfully created!'], 202);
     }
     public function deleteAccount(string $accountId){
