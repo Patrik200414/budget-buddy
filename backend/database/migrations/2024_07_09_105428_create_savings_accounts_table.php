@@ -23,11 +23,11 @@ return new class extends Migration
             $table->float('monthly_interest');
             $table->float('monthly_maintenance_fee');
             $table->float('transaction_fee');
-            $table->timestamp('last_interest_paied_at')->nullable();
-            $table->timestamp('last_monthly_fee_paid_at')->nullable();
+            $table->timestamp('last_interest_paied_at')->default(DB::raw('CURRENT_TIMESTAMP'));
+            $table->timestamp('last_monthly_fee_paid_at')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->double('minimum_balance');
             $table->smallInteger('max_amount_of_transactions_monthly');
-            $table->timestamp('last_avaible_transaction_date')->nullable();
+            $table->timestamp('last_avaible_transaction_date')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->float('limit_exceeding_fee');
             $table->timestamps();
         });
