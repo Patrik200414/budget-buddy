@@ -18,7 +18,7 @@ return new class extends Migration
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->string('account_name');
             $table->double('balance');
-            $table->boolean('is_account_blocked');
+            $table->boolean('is_account_blocked')->default(false);
             $table->string('account_number')->unique();
             $table->float('monthly_interest');
             $table->float('monthly_maintenance_fee');
@@ -29,6 +29,7 @@ return new class extends Migration
             $table->smallInteger('max_amount_of_transactions_monthly');
             $table->timestamp('last_avaible_transaction_date')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->float('limit_exceeding_fee');
+            $table->boolean('is_deletable')->default(false);
             $table->timestamps();
         });
     }

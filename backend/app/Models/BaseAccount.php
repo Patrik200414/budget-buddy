@@ -15,5 +15,6 @@ abstract class BaseAccount extends Model
         'balance',
         'is_account_blocked',
         'account_number',
+        'is_deletable'
     ];
 }
