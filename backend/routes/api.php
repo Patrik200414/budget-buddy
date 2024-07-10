@@ -27,4 +27,6 @@ Route::group(['middleware'=>'auth:sanctum'], function() use($savingsAccountContr
 
         return $savingsAccountController->updateAccount($request, $accountId);
     });
+
+    Route::patch('/account/savings/block/{accountId}', [SavingsAccountController::class, 'blockAccount']);
 });

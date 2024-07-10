@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\ForbiddenAccountModification;
 use App\Exceptions\NonExistingAccount;
+use App\Exceptions\NonExistingUserException;
+use App\Models\BaseAccount;
 use App\Models\SavingAccount;
+use App\Models\User;
 use App\UserFromBearerToken;
 use Illuminate\Http\Request;
 use App\Http\Requests\AccountRequest;
@@ -53,8 +56,21 @@ class SavingsAccountController extends AccountController
             return $this->handlePDOExceptions($e);
         }
     }
-    public function blockAccount(string $accountId){
+    public function blockAccount(Request $request, string $accountId){
+        try{
+            $user = $this->getUserFromBearerToken($request);
+            $account = SavingAccount::where(['id'=>$accountId])->first();
 
+            $this->validateIfAccountExists($account);
+            $this->validateIfUserHasPermissionForAccount($account, $user);
+
+            $account->is_account_blocked = true;
+            $account->save();
+
+            return response()->json(['status'=>'Account is successfully blocked!'], 202);
+        } catch(NonExistingUserException | NonExistingAccount | ForbiddenAccountModification $e){
+            return response()->json(['error'=>$e->getMessage()], $e->getCode());
+        }
     }
     public function getAccount(string $accountId){
 
@@ -82,6 +98,18 @@ class SavingsAccountController extends AccountController
         $exceptionCode = $e->errorInfo[0];
         if($exceptionCode === '23000'){
             return response()->json(['error'=> 'An account with this account number is already exists!'], 409);
+        }
+    }
+
+    private function validateIfAccountExists(SavingAccount $account){
+        if(!$account){
+            throw new NonExistingAccount();
+        }
+    }
+
+    private function validateIfUserHasPermissionForAccount(SavingAccount $account, User $user){
+        if($account->user_id != $user->id){
+            throw new ForbiddenAccountModification();
         }
     }
 }
