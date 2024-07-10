@@ -18,6 +18,10 @@ abstract class BaseAccount extends Model
         'is_deletable'
     ];
 
+    /**
+     * Get all account's transactions
+     * @return \Illuminate\Database\Eloquent\Relations\MorphMany
+     */
     public function transactions(){
         return $this->morphMany('App\Transaction', 'transactionable');
     }
