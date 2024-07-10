@@ -18,4 +18,8 @@ class SavingAccount extends DepositAccount
         'last_avaible_transaction_date',
         'limit_exceeding_fee'
     ];
+
+    public function account(){
+        return $this->morphOne(BaseAccount::class, 'accountable');
+    }
 }

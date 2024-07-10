@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-abstract class DepositAccount extends BaseAccount
+abstract class DepositAccount extends Model
 {
     use HasFactory;
 

@@ -4,8 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Exceptions\ForbiddenAccountModification;
 use App\Exceptions\NonExistingAccount;
+use App\Exceptions\NonExistingUserException;
+use App\Models\BaseAccount;
 use App\Models\SavingAccount;
+use App\Models\User;
 use App\UserFromBearerToken;
+use DB;
 use Illuminate\Http\Request;
 use App\Http\Requests\AccountRequest;
 use \PDOException;
@@ -16,16 +20,33 @@ class SavingsAccountController extends AccountController
 
     public function createAccount(AccountRequest $request){
         try{
-            $user = $this->getUserFromBearerToken($request);
-            $account = new SavingAccount();
+            return DB::transaction(function() use($request){
+                $user = $this->getUserFromBearerToken($request);
+                $baseAccount = new BaseAccount();
+                $savingsAccount = new SavingAccount();
 
-            $account->user_id = $user->id;
+                $savingsAccount->monthly_interest = $request->monthlyInterest;
+                $savingsAccount->monthly_maintenance_fee = $request->monthlyMaintenanceFee;
+                $savingsAccount->transaction_fee = $request->transactionFee;
+                $savingsAccount->last_interest_paied_at = $request->lastInterestPaiedAt;
+                $savingsAccount->last_monthly_fee_paid_at = $request->lastMonthlyFeePaidAt; 
+                $savingsAccount->minimum_balance = $request->minimumBalance;
+                $savingsAccount->max_amount_of_transactions_monthly = $request->maxAmountOfTransactionsMonthly;
+                $savingsAccount->last_avaible_transaction_date = $request->lastAvaibleTransactionDate;
+                $savingsAccount->limit_exceeding_fee = $request->limitExceedingFee;
+                $savingsAccount->save();
 
-            $updatedAccount = $this->setAccountInformations($request, $account);
-            $updatedAccount->save();
-            return response()->json(['status'=>'Account successfully created!'], 202);
+                $baseAccount->user_id = $user->id;
+                $baseAccount->account_name = $request->accountName;
+                $baseAccount->balance = $request->balance;
+                $baseAccount->account_number = $request->accountNumber;
+                $baseAccount->accountable()->associate($savingsAccount);
+                $baseAccount->save();
+
+                return response()->json(['status'=>'Account successfully created!'], 202);
+            });
         } catch(PDOException $e){
-            
+            return response()->json(['error'=>$e->getMessage()]);
         }
     }
     public function deleteAccount(string $accountId){
@@ -53,8 +74,21 @@ class SavingsAccountController extends AccountController
             return $this->handlePDOExceptions($e);
         }
     }
-    public function blockAccount(string $accountId){
+    public function blockAccount(Request $request, string $accountId){
+        try{
+            $user = $this->getUserFromBearerToken($request);
+            $account = SavingAccount::where(['id'=>$accountId])->first();
 
+            $this->validateIfAccountExists($account);
+            $this->validateIfUserHasPermissionForAccount($account, $user);
+
+            $account->is_account_blocked = true;
+            $account->save();
+
+            return response()->json(['status'=>'Account is successfully blocked!'], 202);
+        } catch(NonExistingUserException | NonExistingAccount | ForbiddenAccountModification $e){
+            return response()->json(['error'=>$e->getMessage()], $e->getCode());
+        }
     }
     public function getAccount(string $accountId){
 
@@ -82,6 +116,18 @@ class SavingsAccountController extends AccountController
         $exceptionCode = $e->errorInfo[0];
         if($exceptionCode === '23000'){
             return response()->json(['error'=> 'An account with this account number is already exists!'], 409);
+        }
+    }
+
+    private function validateIfAccountExists(SavingAccount $account){
+        if(!$account){
+            throw new NonExistingAccount();
+        }
+    }
+
+    private function validateIfUserHasPermissionForAccount(SavingAccount $account, User $user){
+        if($account->user_id != $user->id){
+            throw new ForbiddenAccountModification();
         }
     }
 }
