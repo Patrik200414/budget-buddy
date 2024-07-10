@@ -17,4 +17,8 @@ abstract class BaseAccount extends Model
         'account_number',
         'is_deletable'
     ];
+
+    public function transactions(){
+        return $this->morphMany('App\Transaction', 'transactionable');
+    }
 }

@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('transaction_categories', function (Blueprint $table) {
             $table->id();
             $table->string('transaction_category_name');
-            $table->bigInteger('transaction_type_id');
+            $table->unsignedBigInteger('transaction_type_id');
             $table->foreign('transaction_type_id')->references('id')->on('transaction_types')->onDelete('cascade');
             $table->timestamps();
         });

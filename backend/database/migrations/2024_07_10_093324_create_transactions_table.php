@@ -13,6 +13,13 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
+            $table->morphs('transactionable');
+            $table->double('amount');
+            $table->timestamp('transaction_time');
+            $table->string('title');
+            $table->text('description');
+            $table->unsignedBigInteger('transaction_subcategory_id');
+            $table->foreign('transaction_subcategory_id')->references('id')->on('transaction_subcategories');
             $table->timestamps();
         });
     }

@@ -17,4 +17,8 @@ class Transaction extends Model
         'description',
         'transaction_subcategory_id'
     ];
+
+    public function transactionable(){
+        return $this->morphTo();
+    }
 }
