@@ -22,4 +22,9 @@ Route::group(['middleware'=>'auth:sanctum'], function() use($savingsAccountContr
     Route::post('/account/savings', function(SavingsAccountRequest $request) use($savingsAccountController){
         return $savingsAccountController->createAccount($request);
     });
+
+    Route::put('/account/savings/{accountId}', function(SavingsAccountRequest $request, string $accountId) use($savingsAccountController){
+
+        return $savingsAccountController->updateAccount($request, $accountId);
+    });
 });

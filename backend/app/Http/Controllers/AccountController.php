@@ -9,7 +9,7 @@ abstract class AccountController extends Controller
 {
     abstract public function createAccount(AccountRequest $request);
     abstract public function deleteAccount(string $accountId);
-    abstract public function updateAccount(AccountRequest $request);
+    abstract public function updateAccount(AccountRequest $request, string $accountId);
     abstract public function blockAccount(string $accountId);
-    abstract public function getAccount($useId, $accountId);
+    abstract public function getAccount(string $accountId);
 }

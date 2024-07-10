@@ -1,0 +1,76 @@
+{
+    "Income": {
+        "Income": [
+            "Salary",
+            "Business income",
+            "Freelance/Gig income",
+            "Investment income",
+            "Rental income",
+            "Gifts",
+            "Other"
+        ]
+    },
+    "Expense": {
+        "Housing": [
+            "Rent/Mortgage",
+            "Utilities",
+            "Property Taxes",
+            "Maintenance/Repairs",
+            "Home Insurance"
+        ],
+        "Transportation": [
+            "Car Payments",
+            "Fuel",
+            "Public Transportation",
+            "Maintenance/Repairs",
+            "Insurance",
+            "Parking"
+        ],
+        "Food": [
+            "Groceries",
+            "Dining Out",
+            "Snacks/Beverages"
+        ],
+        "Health and Wellness": [
+            "Health Insurance",
+            "Medical Bills",
+            "Prescription Medications",
+            "Fitness"
+        ],
+        "Personal Care": [
+            "Clothing",
+            "Haircuts/Salons",
+            "Personal Hygiene Products"
+        ],
+        "Entertainment": [
+            "Subscriptions",
+            "Movies/Concerts",
+            "Hobbies"
+        ],
+        "Education": [
+            "Tuition",
+            "Books/Supplies",
+            "Courses/Workshops"
+        ],
+        "Insurance": [
+            "Life Insurance",
+            "Health Insurance",
+            "Auto Insurance",
+            "Home/Renters Insurance"
+        ],
+        "Savings & Investments": [
+            "Savings Account Deposits",
+            "Investment Contributions",
+            "Retirement Fund Contributions"
+        ],
+        "Gifts & Donations": [
+            "Charitable Donations",
+            "Gifts to Friends/Family"
+        ],
+        "Miscellaneous": [
+            "Pet Care",
+            "Child Care",
+            "Miscellaneous Purchases"
+        ]
+    }
+}
