@@ -12,4 +12,8 @@ class DebitAccount extends DepositAccount
     protected $fillable = [
         'overdraft_fee'
     ];
+
+    public function account(){
+        return $this->morphOne(BaseAccount::class, 'accountable');
+    }
 }

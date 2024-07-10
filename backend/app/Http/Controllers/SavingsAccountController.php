@@ -9,6 +9,7 @@ use App\Models\BaseAccount;
 use App\Models\SavingAccount;
 use App\Models\User;
 use App\UserFromBearerToken;
+use DB;
 use Illuminate\Http\Request;
 use App\Http\Requests\AccountRequest;
 use \PDOException;
@@ -19,16 +20,33 @@ class SavingsAccountController extends AccountController
 
     public function createAccount(AccountRequest $request){
         try{
-            $user = $this->getUserFromBearerToken($request);
-            $account = new SavingAccount();
+            return DB::transaction(function() use($request){
+                $user = $this->getUserFromBearerToken($request);
+                $baseAccount = new BaseAccount();
+                $savingsAccount = new SavingAccount();
 
-            $account->user_id = $user->id;
+                $savingsAccount->monthly_interest = $request->monthlyInterest;
+                $savingsAccount->monthly_maintenance_fee = $request->monthlyMaintenanceFee;
+                $savingsAccount->transaction_fee = $request->transactionFee;
+                $savingsAccount->last_interest_paied_at = $request->lastInterestPaiedAt;
+                $savingsAccount->last_monthly_fee_paid_at = $request->lastMonthlyFeePaidAt; 
+                $savingsAccount->minimum_balance = $request->minimumBalance;
+                $savingsAccount->max_amount_of_transactions_monthly = $request->maxAmountOfTransactionsMonthly;
+                $savingsAccount->last_avaible_transaction_date = $request->lastAvaibleTransactionDate;
+                $savingsAccount->limit_exceeding_fee = $request->limitExceedingFee;
+                $savingsAccount->save();
 
-            $updatedAccount = $this->setAccountInformations($request, $account);
-            $updatedAccount->save();
-            return response()->json(['status'=>'Account successfully created!'], 202);
+                $baseAccount->user_id = $user->id;
+                $baseAccount->account_name = $request->accountName;
+                $baseAccount->balance = $request->balance;
+                $baseAccount->account_number = $request->accountNumber;
+                $baseAccount->accountable()->associate($savingsAccount);
+                $baseAccount->save();
+
+                return response()->json(['status'=>'Account successfully created!'], 202);
+            });
         } catch(PDOException $e){
-            
+            return response()->json(['error'=>$e->getMessage()]);
         }
     }
     public function deleteAccount(string $accountId){

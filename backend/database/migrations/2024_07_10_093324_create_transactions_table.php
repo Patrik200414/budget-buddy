@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('transactions', function (Blueprint $table) {
             $table->id();
-            $table->morphs('transactionable');
+            $table->uuid('account_id');
+            $table->foreign('account_id')->references('id')->on('base_accounts')->onDelete('cascade');
             $table->double('amount');
             $table->timestamp('transaction_time');
             $table->string('title');
