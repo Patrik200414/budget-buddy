@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\AccountType;
 use App\Exceptions\ForbiddenAccountModification;
 use App\Exceptions\NonExistingAccount;
 use App\Exceptions\NonExistingUserException;
@@ -25,6 +26,7 @@ class SavingsAccountController extends AccountController
                 $baseAccount = new BaseAccount();
                 $savingsAccount = new SavingAccount();
                 $baseAccount->user_id = $user->id;
+                $baseAccount->account_type = AccountType::SAVINGS_ACCOUNT->value;
 
                 $this->saveAccountInformations($request, $baseAccount, $savingsAccount);
                 $savingsAccount->save();
@@ -80,6 +82,29 @@ class SavingsAccountController extends AccountController
             return response()->json(['error'=>$e->getMessage()], $e->getCode());
         }
     }
+
+    public function getAccountSummary(Request $request, string $accountId){
+        try{
+            $user = $this->getUserFromBearerToken($request);
+
+            $account = BaseAccount::where(['id'=>$accountId, 'is_account_blocked'=>false])->first();
+            $this->validateIfAccountExists($account);
+            $this->validateIfUserHasPermissionForAccount($account, $user);
+
+            return response()->json([
+                'id'=>$account->id,
+                'accountName'=>$account->account_name,
+                'balance'=>$account->balance,
+                'accountNumber'=>$account->account_number,
+                'accountType'=>$account->account_type
+            ]);
+        } catch(NonExistingAccount | ForbiddenAccountModification $e){
+            return response()->json(['error'=>$e->getMessage()], $e->getCode());
+        }
+
+
+    }
+
     public function getAccount(string $accountId){
 
     }
@@ -108,7 +133,7 @@ class SavingsAccountController extends AccountController
         }
     }
 
-    private function validateIfAccountExists(BaseAccount $account){
+    private function validateIfAccountExists(BaseAccount | null $account){
         if(!$account){
             throw new NonExistingAccount();
         }

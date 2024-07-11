@@ -13,6 +13,7 @@ class BaseAccount extends Model
     protected $fillable = [
         'user_id',
         'account_name',
+        'account_type',
         'balance',
         'is_account_blocked',
         'account_number',
