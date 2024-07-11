@@ -22,4 +22,8 @@ class SavingAccount extends DepositAccount
     public function account(){
         return $this->morphOne(BaseAccount::class, 'accountable');
     }
+
+    public function name(){
+        return 'Savings account';
+    }
 }

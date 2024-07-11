@@ -16,6 +16,7 @@ return new class extends Migration
             $table->uuid('user_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             $table->string('account_name');
+            $table->string('account_type');
             $table->double('balance');
             $table->boolean('is_account_blocked')->default(false);
             $table->string('account_number')->unique();
