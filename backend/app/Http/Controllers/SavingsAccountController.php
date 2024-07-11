@@ -46,13 +46,8 @@ class SavingsAccountController extends AccountController
 
                 $baseAccount = BaseAccount::with('accountable')->where(['id'=>$accountId])->first();
                 
-                if(!$baseAccount){
-                    throw new NonExistingAccount();
-                }
-                
-                if(!$user || $baseAccount->user_id != $user->id){
-                    throw new ForbiddenAccountModification();
-                }
+                $this->validateIfAccountExists($baseAccount);
+                $this->validateIfUserHasPermissionForAccount($baseAccount, $user);
                 
                 $savingsAccount = $baseAccount->accountable;
                 
@@ -72,7 +67,7 @@ class SavingsAccountController extends AccountController
     public function blockAccount(Request $request, string $accountId){
         try{
             $user = $this->getUserFromBearerToken($request);
-            $account = SavingAccount::where(['id'=>$accountId])->first();
+            $account = BaseAccount::where(['id'=>$accountId])->first();
 
             $this->validateIfAccountExists($account);
             $this->validateIfUserHasPermissionForAccount($account, $user);
@@ -113,13 +108,13 @@ class SavingsAccountController extends AccountController
         }
     }
 
-    private function validateIfAccountExists(SavingAccount $account){
+    private function validateIfAccountExists(BaseAccount $account){
         if(!$account){
             throw new NonExistingAccount();
         }
     }
 
-    private function validateIfUserHasPermissionForAccount(SavingAccount $account, User $user){
+    private function validateIfUserHasPermissionForAccount(BaseAccount $account, User $user){
         if($account->user_id != $user->id){
             throw new ForbiddenAccountModification();
         }
