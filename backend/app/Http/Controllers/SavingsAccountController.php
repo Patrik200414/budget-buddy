@@ -24,50 +24,45 @@ class SavingsAccountController extends AccountController
                 $user = $this->getUserFromBearerToken($request);
                 $baseAccount = new BaseAccount();
                 $savingsAccount = new SavingAccount();
-
-                $savingsAccount->monthly_interest = $request->monthlyInterest;
-                $savingsAccount->monthly_maintenance_fee = $request->monthlyMaintenanceFee;
-                $savingsAccount->transaction_fee = $request->transactionFee;
-                $savingsAccount->last_interest_paied_at = $request->lastInterestPaiedAt;
-                $savingsAccount->last_monthly_fee_paid_at = $request->lastMonthlyFeePaidAt; 
-                $savingsAccount->minimum_balance = $request->minimumBalance;
-                $savingsAccount->max_amount_of_transactions_monthly = $request->maxAmountOfTransactionsMonthly;
-                $savingsAccount->last_avaible_transaction_date = $request->lastAvaibleTransactionDate;
-                $savingsAccount->limit_exceeding_fee = $request->limitExceedingFee;
-                $savingsAccount->save();
-
                 $baseAccount->user_id = $user->id;
-                $baseAccount->account_name = $request->accountName;
-                $baseAccount->balance = $request->balance;
-                $baseAccount->account_number = $request->accountNumber;
+
+                $this->saveAccountInformations($request, $baseAccount, $savingsAccount);
+                $savingsAccount->save();
                 $baseAccount->accountable()->associate($savingsAccount);
                 $baseAccount->save();
-
+                
                 return response()->json(['status'=>'Account successfully created!'], 202);
             });
         } catch(PDOException $e){
-            return response()->json(['error'=>$e->getMessage()]);
+            return $this->handlePDOExceptions($e);
         }
     }
     public function deleteAccount(string $accountId){
     }
     public function updateAccount(AccountRequest $request, string $accountId){
         try{
-            $user = $this->getUserFromBearerToken($request);
+            return DB::transaction(function() use($request, $accountId){
+                $user = $this->getUserFromBearerToken($request);
 
-            $account = SavingAccount::where(['id'=>$accountId])->first();
-            if(!$account){
-                throw new NonExistingAccount();
-            }
-
-            if(!$user || $account->user_id != $user->id){
-                throw new ForbiddenAccountModification();
-            }
-
-            $updatedAccount = $this->setAccountInformations($request, $account);
-            $updatedAccount->save();
-
-            return response()->json(['status'=>'Account successfully updated!'], 202);
+                $baseAccount = BaseAccount::with('accountable')->where(['id'=>$accountId])->first();
+                
+                if(!$baseAccount){
+                    throw new NonExistingAccount();
+                }
+                
+                if(!$user || $baseAccount->user_id != $user->id){
+                    throw new ForbiddenAccountModification();
+                }
+                
+                $savingsAccount = $baseAccount->accountable;
+                
+                $this->saveAccountInformations($request, $baseAccount, $savingsAccount);
+                
+                $baseAccount->save();
+                $savingsAccount->save();
+    
+                return response()->json(['status'=>'Account successfully updated!'], 202);
+            });
         } catch(NonExistingAccount | ForbiddenAccountModification $e){
             return response()->json(['error'=>$e->getMessage()], $e->getCode());
         } catch(PDOException $e){
@@ -95,21 +90,20 @@ class SavingsAccountController extends AccountController
     }
 
 
-    private function setAccountInformations(AccountRequest $request, SavingAccount $account){        
-        $account->account_name= $request->accountName;
-        $account->balance = $request->balance;
-        $account->account_number = $request->accountNumber;
-        $account->monthly_interest = $request->monthlyInterest;
-        $account->monthly_maintenance_fee = $request->monthlyMaintenanceFee;
-        $account->transaction_fee = $request->transactionFee;
-        $account->last_interest_paied_at = $request->lastInterestPaiedAt;
-        $account->last_monthly_fee_paid_at = $request->lastMonthlyFeePaidAt; 
-        $account->minimum_balance = $request->minimumBalance;
-        $account->max_amount_of_transactions_monthly = $request->maxAmountOfTransactionsMonthly;
-        $account->last_avaible_transaction_date = $request->lastAvaibleTransactionDate;
-        $account->limit_exceeding_fee = $request->limitExceedingFee;
-
-        return $account;
+    private function saveAccountInformations(AccountRequest $request, BaseAccount $baseAccount, SavingAccount $savingsAccount){        
+        $savingsAccount->monthly_interest = $request->monthlyInterest;
+        $savingsAccount->monthly_maintenance_fee = $request->monthlyMaintenanceFee;
+        $savingsAccount->transaction_fee = $request->transactionFee;
+        $savingsAccount->last_interest_paied_at = $request->lastInterestPaiedAt;
+        $savingsAccount->last_monthly_fee_paid_at = $request->lastMonthlyFeePaidAt; 
+        $savingsAccount->minimum_balance = $request->minimumBalance;
+        $savingsAccount->max_amount_of_transactions_monthly = $request->maxAmountOfTransactionsMonthly;
+        $savingsAccount->last_avaible_transaction_date = $request->lastAvaibleTransactionDate;
+        $savingsAccount->limit_exceeding_fee = $request->limitExceedingFee;
+        
+        $baseAccount->account_name = $request->accountName;
+        $baseAccount->balance = $request->balance;
+        $baseAccount->account_number = $request->accountNumber;
     }
 
     private function handlePDOExceptions(PDOException $e){
