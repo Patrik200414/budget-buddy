@@ -8,7 +8,7 @@ import ForgetPasswordNewPasswordView from '../views/ForgetPasswordNewPasswordVie
 import Navbar from '@/components/Navbar.vue';
 import ProfileUpdateView from '@/views/ProfileUpdateView.vue';
 import CreateAccount from '@/views/CreateAccount.vue';
-import CreateSavingsAccount from '@/views/CreateSavingsAccount.vue';
+import CreateSavingsAccount from '../views/CreateSavingsAccount.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
