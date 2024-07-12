@@ -41,3 +41,12 @@ export function getLogedInUser(){
 
     return JSON.parse(token);
 }
+
+export function changeInputsDisable(inputs, disableValue){
+    const inputCopy = [...inputs];
+    for(const input of inputCopy){
+        input.isDisabled = disableValue;
+    }
+
+    return inputCopy;
+}

@@ -2,9 +2,13 @@
 import {onBeforeMount, ref} from 'vue';
 import axios from 'axios';
 import router from '@/router';
-import {formatErrorMessages} from '../utility/utility';
+import {changeInputsDisable, convertGeneratedInputToRequestInput, formatErrorMessages, inputFactory} from '../utility/utility';
+import DynamicForm from '@/components/DynamicForm.vue';
 
-
+const formInputs = ref([
+    inputFactory('Password', 'password', 'password', false, '', 'Password'),
+    inputFactory('Re-enter password', 'password_confirmation', 'password', false, '', 'Re-enter password'),
+])
 const isVerified = ref(false);
 const errorMessage = ref();
 const isVerificationLoading = ref(false);
@@ -14,7 +18,7 @@ const isDisabled = ref(false);
 const password = defineModel('password');
 const reEnterPassword = defineModel('reEnterPassword');
 
-const passwordChangeErrorMessages = ref();
+const passwordChangeErrorMessages = ref([]);
 const isPasswordChangeLoading = ref(false);
 const passwordUpdateInformation = ref('');
 
@@ -43,19 +47,30 @@ async function handleSubmit(){
     try{
         isPasswordChangeLoading.value = true;
         passwordChangeErrorMessages.value = [];
-        const passwordChangeResponse = await axios.put(`/api/user/password/reset/${resetPasswordToken.value}`, {
-            password: password.value,
-            password_confirmation: reEnterPassword.value
+
+        const updatedPassword = convertGeneratedInputToRequestInput(formInputs);
+        console.log(updatedPassword);
+        changeInputsDisable(formInputs.value, true);
+        const passwordChangeResponse = await axios.put(`/api/user/password/reset/${resetPasswordToken.value}`, 
+            updatedPassword, {
+            headers: {
+                Accept: 'application/json'
+            }
         });
       
         passwordUpdateInformation.value = passwordChangeResponse.data.message;
         isDisabled.value = true;
     } catch(error){
+        changeInputsDisable(formInputs.value, false);
         const errors = formatErrorMessages(error)
         passwordChangeErrorMessages.value = errors;
     } finally{
         isPasswordChangeLoading.value = false;
     }
+}
+
+function handleInputChangeValue(index, inputValue){
+    formInputs.value[index].value = inputValue;
 }
 </script>
 
@@ -74,23 +89,13 @@ async function handleSubmit(){
             <h1 class="text-center">New Password</h1>
 
             <form @submit.prevent="handleSubmit" class="d-flex flex-column align-items-center">
-                <div class="form-group p-4 w-100">
-                    <label for="password">Password</label>
-                    <input :disabled="isDisabled" v-model="password" type="password" class="form-control" id="password" placeholder="Password">
-                </div>
-                <div class="form-group p-4 w-100">
-                    <label for="reEnterPassword">Re-enter password:</label>
-                    <input :disabled="isDisabled" v-model="reEnterPassword" type="password" class="form-control" id="reEnterPassword" placeholder="Re-enter password">
-                </div>
-                <em v-show="isPasswordChangeLoading" class="mb-4">Loading ...</em>
-                <em v-for="passwordChangeErrorMessage in passwordChangeErrorMessages" class="text-danger mb-4">{{passwordChangeErrorMessage}}</em>
+                <DynamicForm @onInputValueChange="handleInputChangeValue" @onSubmit="handleSubmit" :inputs="formInputs" :errorMessages="passwordChangeErrorMessages" :isLoading="isPasswordChangeLoading"/>
                 <div v-if="passwordUpdateInformation" class="m-4 text-center">
                     <em class="text-center">{{passwordUpdateInformation}}</em>
                     <RouterLink to="/login" class="text-center mt-4">
                         <button type="button" class="btn btn-primary w-50 d-block mx-auto">Login</button>
                     </RouterLink>
                 </div>
-                <button :disabled="isDisabled" type="submit" class="btn btn-primary w-100">Submit</button>
             </form>
         </div>
 
