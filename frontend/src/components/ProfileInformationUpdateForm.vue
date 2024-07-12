@@ -1,7 +1,8 @@
 <script setup>
 import axios from 'axios';
 import { ref } from 'vue';
-import {formatErrorMessages} from '../utility/utility';
+import {changeInputsDisable, convertGeneratedInputToRequestInput, formatErrorMessages, inputFactory} from '../utility/utility';
+import DynamicForm from './DynamicForm.vue';
 
 
 const tokenName = import.meta.env.VITE_AUTH_KEY_NAME;
@@ -12,12 +13,15 @@ const props = defineProps({
     onEditProfile: Function
 });
 
-const firstName = ref(props.currUser.firstName);
-const lastName = ref(props.currUser.lastName);
-const email = ref(props.currUser.email);
-const previousPassword = ref();
-const password = ref();
-const passwordConfirmation = ref();
+const formInputs = ref([
+    inputFactory('First name', 'firstName', 'text', false, props.currUser.firstName, 'First name'),
+    inputFactory('Last name', 'lastName', 'text', false, props.currUser.lastName, 'Last name'),
+    inputFactory('Email', 'email', 'text', false, props.currUser.email, 'Email'),
+    inputFactory('Previous password', 'previousPassword', 'password', false, '', 'Previous password'),
+    inputFactory('Password', 'password', 'password', false, '', 'Password'),
+    inputFactory('Password confirmation', 'password_confirmation', 'password', false, '', 'Password confirmation')
+]);
+
 
 const isLoading = ref(false);
 const errorMessages = ref([]);
@@ -27,14 +31,8 @@ async function handleSubmit(){
     try{
         isLoading.value = true;
         isInputsDisabled.value = true;
-        const userUpdate = {
-            firstName: firstName.value,
-            lastName: lastName.value,
-            email: email.value,
-            previousPassword: previousPassword.value,
-            password: password.value,
-            password_confirmation: passwordConfirmation.value
-        }
+        const userUpdate = convertGeneratedInputToRequestInput(formInputs);
+        changeInputsDisable(formInputs.value, true);
 
         const userUpdateResponse = await axios.put('/api/user/update', userUpdate, {
             headers: {
@@ -50,8 +48,8 @@ async function handleSubmit(){
         const errors = formatErrorMessages(error);
         errorMessages.value = errors;
     } finally{
+        changeInputsDisable(formInputs.value, false);
         isLoading.value = false;
-        isInputsDisabled.value = false;
     }
 }
 
@@ -63,44 +61,21 @@ function setValuesToResponse(userUpdateResponse){
 }
 
 function emptyPasswordInformations(){
-    previousPassword.value = '';
-    password.value = '';
-    passwordConfirmation.value = '';
+    for(let i = 2; i < formInputs.value.length; i++){
+        formInputs.value[i].value = '';
+    }
 }
 
+function handleInputChangeValue(index, inputValue){
+    formInputs.value[index].value = inputValue;
+}
 </script>
 
 <template>
     <div class="container d-flex justify-content-center align-items-center">
         <div class="w-75">
             <form v-if="props.currUser" @submit.prevent="handleSubmit" class="d-flex flex-column align-items-center">
-                <div class="form-group p-4 w-100">
-                    <label for="firstName">First name:</label>
-                    <input @input="e => firstName = e.target.value" :disabled="isInputsDisabled" type="text" class="form-control" id="firstName" placeholder="First name" :value="firstName">
-                </div>
-                <div class="form-group p-4 w-100">
-                    <label for="lastName">Last name:</label>
-                    <input @input="e => lastName = e.target.value" :disabled="isInputsDisabled" type="text" class="form-control" id="lastName" placeholder="Last name" :value="lastName">
-                </div>
-                <div class="form-group p-4 w-100">
-                    <label for="email">Email:</label>
-                    <input @input="e => email = e.target.value" :disabled="isInputsDisabled" type="email" class="form-control" id="email" placeholder="Email address" :value="email">
-                </div>
-                <div class="form-group p-4 w-100">
-                    <label for="previousPassword">Previous password:</label>
-                    <input @input="e => previousPassword = e.target.value" :disabled="isInputsDisabled" type="password" class="form-control" id="previousPassword" placeholder="Previous password" :value="previousPassword">
-                </div>
-                <div class="form-group p-4 w-100">
-                    <label for="password">Password:</label>
-                    <input @input="e => password = e.target.value" :disabled="isInputsDisabled" type="password" class="form-control" id="password" placeholder="Password" :value="password">
-                </div>
-                <div class="form-group p-4 w-100">
-                    <label for="passwordConfirmation">Password confirmation:</label>
-                    <input @input="e => passwordConfirmation = e.target.value" :disabled="isInputsDisabled" type="password" class="form-control" id="passwordConfirmation" placeholder="Password confirmation" :value="passwordConfirmation">
-                </div>
-                <em v-show="isLoading" class="mb-4">Loading ...</em>
-                <em v-for="errorMessage in errorMessages" :key="errorMessage" class="text-danger mb-4">{{errorMessage}}</em>
-                <button :disabled="isInputsDisabled" type="submit" class="btn btn-primary w-100">Update!</button>
+                <DynamicForm @onInputValueChange="handleInputChangeValue" @onSubmit="handleSubmit" :inputs="formInputs" :errorMessages="errorMessages" :isLoading="isLoading"/>
                 <button @click="onEditProfile" :disabled="isInputsDisabled" type="button" class="btn btn-secondary w-100 mt-2">Cancel!</button>
             </form>
         </div>

@@ -1,12 +1,16 @@
 <script setup>
-import { ref } from 'vue';
+import { onBeforeMount, ref } from 'vue';
 import ProfileInformations from '../components/ProfileInformations.vue';
 import ProfileInformationUpdateForm from '../components/ProfileInformationUpdateForm.vue'
+import { getLogedInUser } from '@/utility/utility';
 
-const tokenName = import.meta.env.VITE_AUTH_KEY_NAME;
-const currUser = ref(JSON.parse(localStorage.getItem(tokenName)));
+const currUser = ref();
 const isProfileUpdateFormOn = ref(false);
 const isCreatedAlertVisible = ref(false);
+
+onBeforeMount(() => {
+    currUser.value = getLogedInUser();
+})
 
 function handleUpdateValue(updatedUser){
     currUser.value = updatedUser;

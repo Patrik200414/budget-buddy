@@ -1,7 +1,13 @@
 <script setup>
-import SavingsAccountForm from '../components/SavingsAccountForm.vue';
+import { getLogedInUser } from '@/utility/utility';
+import { onBeforeMount } from 'vue';
+
+
+onBeforeMount(() => {
+    getLogedInUser();
+})
 </script>
 
 <template>
-    <SavingsAccountForm />
+    <RouterLink to="/account/create/savings-account">Create savings account</RouterLink>
 </template>

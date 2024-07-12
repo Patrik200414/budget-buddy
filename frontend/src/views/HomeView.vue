@@ -1,14 +1,10 @@
 <script setup>
 import router from '@/router';
+import { getLogedInUser } from '@/utility/utility';
 import { onBeforeMount } from 'vue';
 
 onBeforeMount(() => {
-  const tokenName = import.meta.env.VITE_AUTH_KEY_NAME;
-
-  if(!localStorage.getItem(tokenName)){
-    router.push('/login');
-    return;
-  }
+  getLogedInUser();
 })
 </script>
 

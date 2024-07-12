@@ -3,13 +3,16 @@ import { RouterLink } from 'vue-router';
 import {ref} from 'vue';
 import axios from 'axios';
 import InformationAlert from '../components/InformationAlert.vue';
-import {formatErrorMessages} from '../utility/utility';
+import {changeInputsDisable, convertGeneratedInputToRequestInput, formatErrorMessages, inputFactory} from '../utility/utility';
+import DynamicForm from '@/components/DynamicForm.vue';
 
-const firstName = defineModel('firstName');
-const lastName = defineModel('lastName');
-const email = defineModel('email');
-const password = defineModel('password');
-const passwordConfirmation = defineModel('passwordConfirmation');
+const formInputs = ref([
+    inputFactory('First name', 'firstName', 'text', false, '', 'First name'),
+    inputFactory('Last name', 'lastName', 'text', false, '', 'Last name'),
+    inputFactory('Email', 'email', 'email', false, '', 'Email'),
+    inputFactory('Password', 'password', 'password', false, '', 'Password'),
+    inputFactory('Password confirmation', 'password_confirmation', 'password', false, '', 'Passcord confirmation')
+]);
 
 const isLoading = ref(false);
 const errorMessages = ref([]);
@@ -21,20 +24,21 @@ async function handleSubmit(){
         errorMessages.value = [];
         isLoading.value = true;
         isInputsDisabled.value = true;
-        const registrationInformation = await axios.post('/api/user/registration', {
-            firstName: firstName.value,
-            lastName: lastName.value,
-            email: email.value,
-            password: password.value,
-            password_confirmation: passwordConfirmation.value
-        }, {
+
+        const registrationInformations = convertGeneratedInputToRequestInput(formInputs);
+        formInputs.value = changeInputsDisable(formInputs.value, true);
+        const registrationInformation = await axios.post('/api/user/registration', 
+        registrationInformations, {
             headers: {
                 'Accept': 'application/json'
             }
         });
 
+
+
         information.value = registrationInformation.data.message;
     } catch(error){
+        formInputs.value = changeInputsDisable(formInputs.value, false);
         const errors = formatErrorMessages(error);
         errorMessages.value = errors;
         isInputsDisabled.value = false;
@@ -43,7 +47,9 @@ async function handleSubmit(){
     }
 }
 
-
+function handleInputChangeValue(index, inputValue){
+    formInputs.value[index].value = inputValue;
+}
 </script>
 
 <template>
@@ -51,32 +57,8 @@ async function handleSubmit(){
     <div class="container d-flex justify-content-center align-items-center vh-100">
         <div class="w-50">
             <h1 class="text-center">Registration</h1>
-            <form @submit.prevent="handleSubmit" class="d-flex flex-column align-items-center">
-                <div class="form-group p-4 w-100">
-                    <label for="firstName">First name:</label>
-                    <input :disabled="isInputsDisabled" v-model="firstName" type="text" class="form-control" id="firstName" placeholder="First name">
-                </div>
-                <div class="form-group p-4 w-100">
-                    <label for="lastName">Last name:</label>
-                    <input :disabled="isInputsDisabled" v-model="lastName" type="text" class="form-control" id="lastName" placeholder="Last name">
-                </div>
-                <div class="form-group p-4 w-100">
-                    <label for="email">Email:</label>
-                    <input :disabled="isInputsDisabled" v-model="email" type="email" class="form-control" id="email" placeholder="Email address">
-                </div>
-                <div class="form-group p-4 w-100">
-                    <label for="password">Password:</label>
-                    <input :disabled="isInputsDisabled" v-model="password" type="password" class="form-control" id="password" placeholder="Password">
-                </div>
-                <div class="form-group p-4 w-100">
-                    <label for="passwordConfirmation">Password confirmation:</label>
-                    <input :disabled="isInputsDisabled" v-model="passwordConfirmation" type="password" class="form-control" id="passwordConfirmation" placeholder="Password confirmation">
-                </div>
-                <em v-show="isLoading" class="mb-4">Loading ...</em>
-                <em v-for="errorMessage in errorMessages" :key="errorMessage" class="text-danger mb-4">{{errorMessage}}</em>
-                <button :disabled="isInputsDisabled" type="submit" class="btn btn-primary w-100">Submit</button>
-                <RouterLink to="/login" class="text-center mt-4">Login!</RouterLink>
-            </form>
+            <DynamicForm @onInputValueChange="handleInputChangeValue" @onSubmit="handleSubmit" :inputs="formInputs" :errorMessages="errorMessages" :isLoading="isLoading"/>
+            <RouterLink to="/login" class="text-center mt-4">Login!</RouterLink>
         </div>
     </div>
 </template>

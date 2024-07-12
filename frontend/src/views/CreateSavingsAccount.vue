@@ -1,6 +1,6 @@
 <script setup>
 import { onBeforeMount, ref } from 'vue';
-import { inputFactory, convertGeneratedInputToRequestInput, getLogedInUser, formatErrorMessages} from '@/utility/utility';
+import { inputFactory, convertGeneratedInputToRequestInput, getLogedInUser, formatErrorMessages, changeInputsDisable} from '@/utility/utility';
 import DynamicForm from '../components/DynamicForm.vue';
 import axios from 'axios';
 
@@ -40,7 +40,7 @@ async function handleSubmit(){
         errorMessages.value = [];
 
         const inputRequestValues = convertGeneratedInputToRequestInput(formInputs);
-        formInputs.value = changeInputDisable(formInputs.value, true);
+        formInputs.value = changeInputsDisable(formInputs.value, true);
 
         const createSavingsAccountResponse = await axios.post('/api/account/savings', inputRequestValues, {
             headers:{
@@ -63,14 +63,7 @@ async function handleSubmit(){
     }
 }
 
-function changeInputDisable(inputs, disableValue){
-    const inputCopy = [...inputs];
-    for(const input of inputCopy){
-        input.isDisabled = disableValue;
-    }
 
-    return inputCopy;
-}
 
 </script>
 
