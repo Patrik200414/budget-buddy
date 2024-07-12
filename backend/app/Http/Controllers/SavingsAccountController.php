@@ -163,7 +163,7 @@ class SavingsAccountController extends AccountController
     private function handlePDOExceptions(PDOException $e){
         $exceptionCode = $e->errorInfo[0];
         if($exceptionCode === '23000'){
-            return response()->json(['error'=> 'An account with this account number is already exists!'], 409);
+            return response()->json(['errors'=> ['error'=>['An account with this account number is already exists!']]], 409);
         }
     }
 }
