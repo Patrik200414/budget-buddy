@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\BaseAccountController;
 use App\Http\Controllers\SavingsAccountController;
 use App\Http\Controllers\UserController;
 use App\Http\Requests\SavingsAccountRequest;
@@ -24,16 +25,17 @@ Route::group(['middleware'=>'auth:sanctum'], function() use($savingsAccountContr
     });
 
     Route::put('/account/savings/{accountId}', function(SavingsAccountRequest $request, string $accountId) use($savingsAccountController){
-
         return $savingsAccountController->updateAccount($request, $accountId);
     });
 
-    Route::patch('/account/savings/block/{accountId}', [SavingsAccountController::class, 'blockAccount']);
-
-    Route::get('/account/{accountId}/summary', [SavingsAccountController::class, 'getAccountSummary']);
-
-    /**
-     * Special request type needed!!!
-     */
     Route::delete('/account/{accountId}', [SavingsAccountController::class, 'deleteAccount']);
+    
+
+    Route::patch('/account/savings/block/{accountId}', [BaseAccountController::class, 'blockAccount']);
+
+    Route::get('/account/{accountId}/summary', [BaseAccountController::class, 'getAccountSummary']);
+
+    Route::get('/account/summary', [BaseAccountController::class, 'getAccountSummariesByUser']);
+
+    Route::get('/account/transfer/{transferFromAccountId}', [BaseAccountController::class, 'getTransferToAccounts']);
 });
