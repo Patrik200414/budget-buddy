@@ -3,16 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\AccountType;
+use App\AccountValidationTrait;
 use App\CreateHoldingsAccount;
 use App\Exceptions\ForbiddenAccountModification;
 use App\Exceptions\NonExistingAccount;
-use App\Exceptions\NonExistingUserException;
-use App\Http\Requests\DeleteAccountRequest;
 use App\Models\BaseAccount;
 use App\Models\SavingAccount;
 use App\Models\User;
 use App\UserFromBearerToken;
-use Carbon\Carbon;
 use DB;
 use Illuminate\Http\Request;
 use App\Http\Requests\AccountRequest;
@@ -20,7 +18,7 @@ use \PDOException;
 
 class SavingsAccountController extends AccountController
 {
-    use UserFromBearerToken, CreateHoldingsAccount;
+    use UserFromBearerToken, CreateHoldingsAccount, AccountValidationTrait;
 
     const MIN_NUM_FOR_HOLDINGS_ACCOUNT_NUMBER = 100000000;
     const MAX_NUM_FOR_HOLDINGS_ACCOUNT_NUMBER = 999999999999999;
@@ -62,8 +60,9 @@ class SavingsAccountController extends AccountController
                     $this->saveHoldingsAccount($user, $deletableBalance);
                 }
     
-                $deletableSavingsAccountId = $deletableBaseAccount->accountab_id;
+                $deletableSavingsAccountId = $deletableBaseAccount->accountable_id;
     
+                var_dump($deletableSavingsAccountId);
                 $deletableBaseAccount->delete();
                 SavingAccount::where(['id'=>$deletableSavingsAccountId])->delete();
 
@@ -97,86 +96,6 @@ class SavingsAccountController extends AccountController
             return response()->json(['error'=>$e->getMessage()], $e->getCode());
         } catch(PDOException $e){
             return $this->handlePDOExceptions($e);
-        }
-    }
-    public function blockAccount(Request $request, string $accountId){
-        try{
-            $user = $this->getUserFromBearerToken($request);
-            $account = BaseAccount::where(['id'=>$accountId])->first();
-
-            $this->validateIfAccountExists($account);
-            $this->validateIfUserHasPermissionForAccount($account, $user);
-
-            $account->is_account_blocked = true;
-            $account->save();
-
-            return response()->json(['status'=>'Account is successfully blocked!'], 202);
-        } catch(NonExistingUserException | NonExistingAccount | ForbiddenAccountModification $e){
-            return response()->json(['error'=>$e->getMessage()], $e->getCode());
-        }
-    }
-
-    public function getAccountSummary(Request $request, string $accountId){
-        try{
-            $user = $this->getUserFromBearerToken($request);
-
-            $account = BaseAccount::where(['id'=>$accountId, 'is_account_blocked'=>false])->first();
-            $this->validateIfAccountExists($account);
-            $this->validateIfUserHasPermissionForAccount($account, $user);
-
-            return response()->json([
-                'id'=>$account->id,
-                'accountName'=>$account->account_name,
-                'balance'=>$account->balance,
-                'accountNumber'=>$account->account_number,
-                'accountType'=>$account->account_type
-            ]);
-        } catch(NonExistingAccount | ForbiddenAccountModification $e){
-            return response()->json(['error'=>$e->getMessage()], $e->getCode());
-        }
-    }
-
-    public function getAccountSummariesByUser(Request $request){
-        $user = $this->getUserFromBearerToken($request);
-
-        $accounts = BaseAccount::all()->where('user_id', '=', $user->id);
-        $mappedAccount = $accounts->map(function($account){
-            return [
-                'id'=>$account->id,
-                'accountName'=>$account->account_name,
-                'accountType'=>$account->account_type,
-                'balance'=>$account->balance,
-                'accountNumber'=>$account->account_number,
-                'isAccountBlocked'=>$account->is_account_blocked
-            ];
-        });
-
-        return response()->json(['accounts'=>$mappedAccount]);
-    }
-
-    public function getTransferToAccounts(Request $request, string $transferFromAccountId){
-        try{
-            $user = $this->getUserFromBearerToken($request);
-
-            $accounts = BaseAccount::all()
-                ->where('user_id', '=', $user->id)
-                ->where('account_type', '!=', AccountType::HOLDINGS_ACCOUNT->value)
-                ->where('id', '!=', $transferFromAccountId);
-
-            $mappedAccount = $accounts->map(function($account){
-                return [
-                    'id'=>$account->id,
-                    'accountName'=>$account->account_name,
-                    'accountType'=>$account->account_type,
-                    'balance'=>$account->balance,
-                    'accountNumber'=>$account->account_number,
-                    'isAccountBlocked'=>$account->is_account_blocked
-                ];
-            });
-    
-            return response()->json(['test'=>$mappedAccount]);
-        } catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage()]);
         }
     }
 
@@ -245,18 +164,6 @@ class SavingsAccountController extends AccountController
         $exceptionCode = $e->errorInfo[0];
         if($exceptionCode === '23000'){
             return response()->json(['error'=> 'An account with this account number is already exists!'], 409);
-        }
-    }
-
-    private function validateIfAccountExists(BaseAccount | null $account){
-        if(!$account){
-            throw new NonExistingAccount();
-        }
-    }
-
-    private function validateIfUserHasPermissionForAccount(BaseAccount | null $account, User $user){
-        if($account->user_id != $user->id){
-            throw new ForbiddenAccountModification();
         }
     }
 }
