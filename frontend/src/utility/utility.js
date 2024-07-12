@@ -7,3 +7,14 @@ export function formatErrorMessages(error){
 
     return errors;
 }
+
+export function inputFactory(label, id, type, isDisabled, value, placeholder){
+    return {
+        label,
+        id,
+        type,
+        isDisabled,
+        value,
+        placeholder
+    }
+}
