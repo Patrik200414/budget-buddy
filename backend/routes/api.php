@@ -36,4 +36,8 @@ Route::group(['middleware'=>'auth:sanctum'], function() use($savingsAccountContr
      * Special request type needed!!!
      */
     Route::delete('/account/{accountId}', [SavingsAccountController::class, 'deleteAccount']);
+
+    Route::get('/account/summary', [SavingsAccountController::class, 'getAccountSummariesByUser']);
+
+    Route::get('/account/transfer/{transferFromAccountId}', [SavingsAccountController::class, 'getTransferToAccounts']);
 });

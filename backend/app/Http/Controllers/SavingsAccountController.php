@@ -70,8 +70,8 @@ class SavingsAccountController extends AccountController
                 return response()->json(['message'=>'Deletion was successfull!'], 200);
             });
 
-        } catch(\Exception $e){
-            return response()->json(['error'=>$e->getMessage()], 400);
+        } catch(NonExistingAccount | ForbiddenAccountModification $e){
+            return response()->json(['error'=>$e->getMessage()], $e->getCode());
         }
     }
     public function updateAccount(AccountRequest $request, string $accountId){
@@ -134,8 +134,50 @@ class SavingsAccountController extends AccountController
         } catch(NonExistingAccount | ForbiddenAccountModification $e){
             return response()->json(['error'=>$e->getMessage()], $e->getCode());
         }
+    }
 
+    public function getAccountSummariesByUser(Request $request){
+        $user = $this->getUserFromBearerToken($request);
 
+        $accounts = BaseAccount::all()->where('user_id', '=', $user->id);
+        $mappedAccount = $accounts->map(function($account){
+            return [
+                'id'=>$account->id,
+                'accountName'=>$account->account_name,
+                'accountType'=>$account->account_type,
+                'balance'=>$account->balance,
+                'accountNumber'=>$account->account_number,
+                'isAccountBlocked'=>$account->is_account_blocked
+            ];
+        });
+
+        return response()->json(['accounts'=>$mappedAccount]);
+    }
+
+    public function getTransferToAccounts(Request $request, string $transferFromAccountId){
+        try{
+            $user = $this->getUserFromBearerToken($request);
+
+            $accounts = BaseAccount::all()
+                ->where('user_id', '=', $user->id)
+                ->where('account_type', '!=', AccountType::HOLDINGS_ACCOUNT->value)
+                ->where('id', '!=', $transferFromAccountId);
+
+            $mappedAccount = $accounts->map(function($account){
+                return [
+                    'id'=>$account->id,
+                    'accountName'=>$account->account_name,
+                    'accountType'=>$account->account_type,
+                    'balance'=>$account->balance,
+                    'accountNumber'=>$account->account_number,
+                    'isAccountBlocked'=>$account->is_account_blocked
+                ];
+            });
+    
+            return response()->json(['test'=>$mappedAccount]);
+        } catch(\Exception $e){
+            return response()->json(['error'=>$e->getMessage()]);
+        }
     }
 
     public function getAccount(string $accountId){
