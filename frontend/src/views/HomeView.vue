@@ -1,13 +1,59 @@
 <script setup>
-import router from '@/router';
+import DisplayErrorMessages from '@/components/DisplayErrorMessages.vue';
+import DisplayIsLoading from '@/components/DisplayIsLoading.vue';
+import AccountSummaryCard from '@/components/AccountSummaryCard.vue';
+import DeleteModal from '@/components/DeleteModal.vue';
 import { getLogedInUser } from '@/utility/utility';
-import { onBeforeMount } from 'vue';
+import axios from 'axios';
+import { onBeforeMount, ref } from 'vue';
+
+const tokenName = import.meta.env.VITE_AUTH_KEY_NAME;
+
+const currUser = ref();
+const accountSummaries = ref([]);
+const errorMessage = ref();
+const isLoading = ref();
+
+const isModalOpen = ref(false);
+const selectedAccount = ref();
 
 onBeforeMount(() => {
-  getLogedInUser();
-})
+  currUser.value = getLogedInUser();
+  getAccountSummaries();
+});
+
+
+async function getAccountSummaries(){
+  try{
+    isLoading.value = true;
+    const accountSummariesResponse = await axios.get('/api/account/summary', {
+      headers: {
+        Accept: 'application/json',
+        Authorization: 'Bearer ' + currUser.value[tokenName]
+      }
+    });
+    accountSummaries.value = accountSummariesResponse.data.accounts;
+  } catch(error){ 
+    errorMessage.value = error.response.data.message;
+  } finally{
+    isLoading.value = false;
+  }
+}
+
+function openModal(accountId){
+  isModalOpen.value = true
+  selectedAccount.value = accountId;
+}
 </script>
 
 <template>
-  <h1>Home page!</h1>
+  <div class="container d-flex flex-column justify-content-center align-items-center">
+    <h1 class="mt-5">Dash board</h1>
+    <DeleteModal v-if="isModalOpen" @onSelectTransferAccount="" :deletedAccount="selectedAccount" :token="currUser[tokenName]" @onModalClose="() => isModalOpen = false"/>
+    <div v-if="!isModalOpen" class="container d-flex flex-wrap justify-content-between mt-3" data-bs-backdrop="static">
+      <AccountSummaryCard @onModalOpen="openModal" class="m-2" v-for="accountSummary in accountSummaries" :key="accountSummary.id" :isDeletable="true" :accountSummary="accountSummary"/>
+    </div>
+    <DisplayErrorMessages :errorMessages="[errorMessage]"/>
+    <DisplayIsLoading :isLoading="isLoading"/>
+  </div>
 </template>
