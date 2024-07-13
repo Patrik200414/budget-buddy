@@ -2,6 +2,7 @@
 import DisplayErrorMessages from '@/components/DisplayErrorMessages.vue';
 import DisplayIsLoading from '@/components/DisplayIsLoading.vue';
 import AccountSummaryCard from '@/components/AccountSummaryCard.vue';
+import DeleteModal from '@/components/DeleteModal.vue';
 import { getLogedInUser } from '@/utility/utility';
 import axios from 'axios';
 import { onBeforeMount, ref } from 'vue';
@@ -13,6 +14,8 @@ const accountSummaries = ref([]);
 const errorMessage = ref();
 const isLoading = ref();
 
+const isModalOpen = ref(false);
+const selectedAccount = ref();
 
 onBeforeMount(() => {
   currUser.value = getLogedInUser();
@@ -36,13 +39,19 @@ async function getAccountSummaries(){
     isLoading.value = false;
   }
 }
+
+function openModal(accountId){
+  isModalOpen.value = true
+  selectedAccount.value = accountId;
+}
 </script>
 
 <template>
   <div class="container d-flex flex-column justify-content-center align-items-center">
     <h1 class="mt-5">Dash board</h1>
-    <div class="container d-flex flex-wrap justify-content-between mt-3">
-      <AccountSummaryCard class="m-2" v-for="accountSummary in accountSummaries" :key="accountSummary.id" :accountSummary="accountSummary"/>
+    <DeleteModal v-if="isModalOpen" @onSelectTransferAccount="" :deletedAccount="selectedAccount" :token="currUser[tokenName]" @onModalClose="() => isModalOpen = false"/>
+    <div v-if="!isModalOpen" class="container d-flex flex-wrap justify-content-between mt-3" data-bs-backdrop="static">
+      <AccountSummaryCard @onModalOpen="openModal" class="m-2" v-for="accountSummary in accountSummaries" :key="accountSummary.id" :isDeletable="true" :accountSummary="accountSummary"/>
     </div>
     <DisplayErrorMessages :errorMessages="[errorMessage]"/>
     <DisplayIsLoading :isLoading="isLoading"/>

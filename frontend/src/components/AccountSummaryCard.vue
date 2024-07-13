@@ -1,6 +1,7 @@
 <script setup>
 const props = defineProps({
-    accountSummary: Object
+    accountSummary: Object,
+    isDeletable: Boolean
 });
 </script>
 
@@ -12,9 +13,9 @@ const props = defineProps({
             <h6 class="card-subtitle mb-2 text-muted">{{ props.accountSummary.accountNumber }}</h6>
             <em>{{ props.accountSummary.accountType }}</em>
             <br>
-            <div class="mt-3">
+            <div v-if="isDeletable" class="mt-3">
                 <a href="#" class="card-link btn btn-warning">Update</a>
-                <a href="#" class="card-link btn btn-danger">Delete</a>
+                <button @click="$emit('onModalOpen', props.accountSummary)" class="card-link btn btn-danger" data-toggle="modal" data-target="#exampleModal">Delete</button>
             </div>
         </div>
     </div>

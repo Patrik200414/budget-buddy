@@ -49,7 +49,6 @@ async function handleSubmit(){
         passwordChangeErrorMessages.value = [];
 
         const updatedPassword = convertGeneratedInputToRequestInput(formInputs);
-        console.log(updatedPassword);
         changeInputsDisable(formInputs.value, true);
         const passwordChangeResponse = await axios.put(`/api/user/password/reset/${resetPasswordToken.value}`, 
             updatedPassword, {

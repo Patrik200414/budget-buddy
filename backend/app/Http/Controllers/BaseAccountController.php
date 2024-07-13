@@ -67,7 +67,7 @@ class BaseAccountController extends Controller
 
         $mappedAccounts = $this->mapAccountsToAccountSummaries($accounts);
 
-        return response()->json(['test'=>$mappedAccounts]);
+        return response()->json(['accounts'=>$mappedAccounts]);
     }
 
     private function convertAccountModelToSummary(BaseAccount $account){
@@ -81,8 +81,10 @@ class BaseAccountController extends Controller
     }
 
     private function mapAccountsToAccountSummaries(Collection $accounts){
-        return $accounts->map(function($account){
-            return $this->convertAccountModelToSummary($account);
-        });
+        $mappedAccounts = [];
+        foreach($accounts as $account){
+            $mappedAccounts[] = $this->convertAccountModelToSummary($account);
+        }
+        return $mappedAccounts;
     }
 }

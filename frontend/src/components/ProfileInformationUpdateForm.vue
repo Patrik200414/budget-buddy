@@ -44,7 +44,6 @@ async function handleSubmit(){
         setValuesToResponse(userUpdateResponse);
         emptyPasswordInformations();
     } catch(error){
-        console.log(error)
         const errors = formatErrorMessages(error);
         errorMessages.value = errors;
     } finally{
