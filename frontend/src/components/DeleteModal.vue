@@ -5,7 +5,6 @@ import SelectTransferAccount from '@/components/SelectTransferAccount.vue';
 import AccountSummaryCard from './AccountSummaryCard.vue';
 import { formatErrorMessages } from '@/utility/utility';
 import DisplayErrorMessages from './DisplayErrorMessages.vue';
-import { errorMessages } from 'vue/compiler-sfc';
 
 
 const props = defineProps({
@@ -51,7 +50,6 @@ async function handleDeletion(){
                 Authorization: 'Bearer ' + props.token
             }
         });
-        console.log(deleteAccountResponse.data.message);
         emit('onAccountDeleteSuccess');
     } catch(error){
         errors.value = formatErrorMessages(error);
