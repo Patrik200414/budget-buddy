@@ -77,16 +77,17 @@ class BaseAccountController extends Controller
         return response()->json(['accounts'=>$mappedAccounts]);
     }
 
-    public function deleteAccount(Request $request, string $accountId){
+    public function deleteAccount(Request $request){
         try{
-            return DB::transaction(function() use($request, $accountId) {
+            return DB::transaction(function() use($request) {
                 $user = $this->getUserFromBearerToken($request);
+                $accountId = $request->input('deletedAccount');
                 $deletableBaseAccount = BaseAccount::with('accountable')->where(['id'=>$accountId])->first();
                 $this->validateIfAccountExists($deletableBaseAccount);
                 $this->validateIfUserHasPermissionForAccount($deletableBaseAccount, $user);
                 $deletableBalance = $deletableBaseAccount->balance;
     
-                $transferAccountId = $request->transferAccountId;
+                $transferAccountId = $request->input('transferAccount');
     
                 if($transferAccountId){
                     $this->transferBalanceToOtherAccount($transferAccountId, $user, $deletableBalance);
@@ -102,7 +103,7 @@ class BaseAccountController extends Controller
             });
 
         } catch(NonExistingAccount | ForbiddenAccountModification $e){
-            return response()->json(['error'=>$e->getMessage()], $e->getCode());
+            return response()->json(['errors'=> ['error'=>[$e->getMessage()]]], $e->getCode());
         }
     }
 

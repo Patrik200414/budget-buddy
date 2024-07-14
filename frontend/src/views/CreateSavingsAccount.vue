@@ -59,7 +59,7 @@ async function handleSubmit(){
         errorMessages.value = formatErrorMessages(error); 
     } finally{
         isLoading.value = false;
-        formInputs.value = changeInputDisable(formInputs.value, false);
+        formInputs.value = changeInputsDisable(formInputs.value, false);
     }
 }
 

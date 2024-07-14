@@ -3,15 +3,21 @@ import axios from 'axios';
 import { onBeforeMount, ref } from 'vue';
 import SelectTransferAccount from '@/components/SelectTransferAccount.vue';
 import AccountSummaryCard from './AccountSummaryCard.vue';
+import { formatErrorMessages } from '@/utility/utility';
+import DisplayErrorMessages from './DisplayErrorMessages.vue';
+import { errorMessages } from 'vue/compiler-sfc';
 
 
 const props = defineProps({
     deletedAccount: Object,
     token: String
 });
+const emit = defineEmits(['onAccountDeleteSuccess']);
 
 const transferAccounts = ref([]);
 const selectedTransferAccountIndex = ref();
+
+const errors = ref([]);
 
 onBeforeMount(() => {
     getTransferToAccounts();
@@ -29,6 +35,26 @@ async function getTransferToAccounts(){
         transferAccounts.value = transferToAccountsResponse.data.accounts;
     } catch(error){
         console.log(error);
+    }
+}
+
+async function handleDeletion(){
+    try{
+        const transferAccountId = transferAccounts.value[selectedTransferAccountIndex.value] ? transferAccounts.value[selectedTransferAccountIndex.value].id : null;
+        const deleteAccountResponse = await axios.delete(`/api/account/`, {
+            params: {
+                deletedAccount: props.deletedAccount.id,
+                transferAccount: transferAccountId
+            },
+            headers: {
+                Accept: 'application/json',
+                Authorization: 'Bearer ' + props.token
+            }
+        });
+        console.log(deleteAccountResponse.data.message);
+        emit('onAccountDeleteSuccess');
+    } catch(error){
+        errors.value = formatErrorMessages(error);
     }
 }
 </script>
@@ -50,9 +76,10 @@ async function getTransferToAccounts(){
                 <SelectTransferAccount @onSelectTransferAccount="selectedIndex => selectedTransferAccountIndex = selectedIndex" :transferAccounts="transferAccounts"/>
                 <AccountSummaryCard class="w-100 mt-4" v-if="selectedTransferAccountIndex" :isDeletable="false" :accountSummary="transferAccounts[selectedTransferAccountIndex]"/>
               </div>
+              <DisplayErrorMessages :errorMessages="errors"/>
               <div class="modal-footer">
                   <button @click="$emit('onModalClose')" type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                  <button type="button" class="btn btn-primary">Save changes</button>
+                  <button @click="handleDeletion" type="button" class="btn btn-danger">Delete account</button>
               </div>
           </div>
       </div>
