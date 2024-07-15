@@ -47,7 +47,7 @@ function openModal(accountId){
 
 function closeModal(){
   isModalOpen.value = false;
-  accountSummaries.value = accountSummaries.value.filter(account => account.id != selectedAccount.value.id);
+  getAccountSummaries();
   selectedAccount.value = undefined;
 }
 </script>
@@ -57,7 +57,7 @@ function closeModal(){
     <h1 class="mt-5">Dash board</h1>
     <DeleteModal v-if="isModalOpen" @onAccountDeleteSuccess="closeModal" :deletedAccount="selectedAccount" :token="currUser[tokenName]" @onModalClose="() => isModalOpen = false"/>
     <div v-if="!isModalOpen" class="container d-flex flex-wrap justify-content-between mt-3" data-bs-backdrop="static">
-      <AccountSummaryCard @onModalOpen="openModal" class="m-2" v-for="accountSummary in accountSummaries" :key="accountSummary.id" :isDeletable="true" :accountSummary="accountSummary"/>
+      <AccountSummaryCard @onModalOpen="openModal" class="m-2" v-for="accountSummary in accountSummaries" :key="accountSummary.id" :accountType="accountSummary.accountType" :accountSummary="accountSummary"/>
     </div>
     <DisplayErrorMessages :errorMessages="[errorMessage]"/>
     <DisplayIsLoading :isLoading="isLoading"/>

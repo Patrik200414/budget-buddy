@@ -6,6 +6,7 @@ use App\AccountType;
 use App\AccountValidationTrait;
 use App\Exceptions\ForbiddenAccountModification;
 use App\Exceptions\NonExistingAccount;
+use App\Exceptions\UnableToDeleteAccountException;
 use App\Models\BaseAccount;
 use App\Models\SavingAccount;
 use App\UserFromBearerToken;
@@ -44,6 +45,10 @@ class SavingsAccountController extends AccountController
                 $user = $this->getUserFromBearerToken($request);
 
                 $baseAccount = BaseAccount::with('accountable')->where(['id'=>$accountId])->first();
+
+                if($baseAccount->account_type === AccountType::HOLDINGS_ACCOUNT){
+                    throw new UnableToDeleteAccountException();
+                }
                 
                 $this->validateIfAccountExists($baseAccount);
                 $this->validateIfUserHasPermissionForAccount($baseAccount, $user);
