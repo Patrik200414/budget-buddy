@@ -67,7 +67,7 @@ If not here are some links where you can download from :
 - Download Mailpit Docker image: https://hub.docker.com/r/axllent/mailpit
 
 #### Backend setup: 
-For manual setup create a .env file in the backend folder. It should look like the .env.sample file.
+For manual setup create a .env file in the backend folder. It should look like the .env.example file.
 Please change these values in the .env file:
   - DB_CONNECTION=mysql
   - DB_HOST=127.0.0.1 [default MySQL host address]
@@ -84,7 +84,7 @@ Please change these values in the .env file:
   - AUTH_KEY_NAME=[Your authentication keyname, which will be referenced from the frontend, this should be the same as `VITE_AUTH_KEY_NAME` on the frontend folder]
 
 ### Frontend setup:
-For mainual setup create a .env like in the .env.sample file.
+For mainual setup create a .env like in the .env.example file.
 Please change these values:
   - VITE_AUTH_KEY_NAME=[Your authentication keyname, this should be the same as the AUTH_KEY_NAME in the backend folder]
 
