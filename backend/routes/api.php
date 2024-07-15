@@ -28,6 +28,8 @@ Route::group(['middleware'=>'auth:sanctum'], function() use($savingsAccountContr
         return $savingsAccountController->updateAccount($request, $accountId);
     });
 
+    Route::get('/account/savings/{accountId}', [SavingsAccountController::class, 'getAccount']);
+
     Route::delete('/account', [BaseAccountController::class, 'deleteAccount']);
     
 

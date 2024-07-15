@@ -6,12 +6,14 @@ use App\AccountType;
 use App\AccountValidationTrait;
 use App\Exceptions\ForbiddenAccountModification;
 use App\Exceptions\NonExistingAccount;
+use App\Exceptions\UnableToDeleteAccountException;
 use App\Models\BaseAccount;
 use App\Models\SavingAccount;
 use App\UserFromBearerToken;
 use DB;
 use App\Http\Requests\AccountRequest;
 use \PDOException;
+use Illuminate\Http\Request;
 
 class SavingsAccountController extends AccountController
 {
@@ -44,6 +46,10 @@ class SavingsAccountController extends AccountController
                 $user = $this->getUserFromBearerToken($request);
 
                 $baseAccount = BaseAccount::with('accountable')->where(['id'=>$accountId])->first();
+
+                if($baseAccount->account_type === AccountType::HOLDINGS_ACCOUNT){
+                    throw new UnableToDeleteAccountException();
+                }
                 
                 $this->validateIfAccountExists($baseAccount);
                 $this->validateIfUserHasPermissionForAccount($baseAccount, $user);
@@ -64,8 +70,23 @@ class SavingsAccountController extends AccountController
         }
     }
 
-    public function getAccount(string $accountId){
+    public function getAccount(Request $request, string $accountId){
+        try{
+            $user = $this->getUserFromBearerToken($request);
+            $account = BaseAccount::with('accountable')
+                ->where('account_type', '=', AccountType::SAVINGS_ACCOUNT)
+                ->where('id', '=', $accountId)
+                ->first();
 
+            $this->validateIfAccountExists($account);
+            $this->validateIfUserHasPermissionForAccount($account, $user);
+
+            $accountResponse = $this->convertAccountInformationToAccountResponse($account);
+            return response()->json(['account'=>$accountResponse], 200);
+            
+        } catch(NonExistingAccount | ForbiddenAccountModification $e){
+            return response()->json(['error'=>$e->getMessage()], $e->getCode());
+        }
     }
 
     private function saveAccountInformations(AccountRequest $request, BaseAccount $baseAccount, SavingAccount $savingsAccount){        
@@ -82,6 +103,24 @@ class SavingsAccountController extends AccountController
         $baseAccount->account_name = $request->accountName;
         $baseAccount->balance = $request->balance;
         $baseAccount->account_number = $request->accountNumber;
+    }
+
+    private function convertAccountInformationToAccountResponse(BaseAccount $account){
+        return [
+            'id'=>$account->id,
+            'accountName'=>$account->account_name,
+            'accountType'=>$account->account_type,
+            'balance'=>$account->balance,
+            'isAccountBlocked'=>$account->is_account_blocked,
+            'accountNumber'=>$account->account_number,
+            'createdAt'=>$account->created_at,
+            'monthlyInterest'=>$account->monthly_interest,
+            'monthlyMaintenanceFee'=>$account->accountable->monthly_maintenance_fee,
+            'transactionFee'=>$account->accountable->transaction_fee,
+            'minimumBalance'=>$account->accountable->minimum_balance,
+            'maxAmountOfTransactionsMonthly'=>$account->accountable->max_amount_of_transactions_monthly,
+            'limitExceedingFee'=>$account->accountable->limit_exceeding_fee,
+        ];
     }
 
     private function handlePDOExceptions(PDOException $e){
