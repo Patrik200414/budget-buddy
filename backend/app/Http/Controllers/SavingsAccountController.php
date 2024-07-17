@@ -6,9 +6,13 @@ use App\AccountType;
 use App\AccountValidationTrait;
 use App\Exceptions\ForbiddenAccountModification;
 use App\Exceptions\NonExistingAccount;
+use App\Exceptions\NonExistingTransactionSubcategoryException;
 use App\Exceptions\UnableToDeleteAccountException;
+use App\Handlers\AddInterestHandler;
 use App\Models\BaseAccount;
 use App\Models\SavingAccount;
+use App\Models\Transaction;
+use App\Models\TransactionSubcategory;
 use App\UserFromBearerToken;
 use DB;
 use App\Http\Requests\AccountRequest;
@@ -72,18 +76,22 @@ class SavingsAccountController extends AccountController
 
     public function getAccount(Request $request, string $accountId){
         try{
-            $user = $this->getUserFromBearerToken($request);
-            $account = BaseAccount::with('accountable')
-                ->where('account_type', '=', AccountType::SAVINGS_ACCOUNT)
-                ->where('id', '=', $accountId)
-                ->first();
+            return DB::transaction(function() use($request, $accountId){
+                $user = $this->getUserFromBearerToken($request);
+                $account = BaseAccount::with('accountable')
+                    ->where('account_type', '=', AccountType::SAVINGS_ACCOUNT)
+                    ->where('id', '=', $accountId)
+                    ->first();
 
-            $this->validateIfAccountExists($account);
-            $this->validateIfUserHasPermissionForAccount($account, $user);
+                $this->validateIfAccountExists($account);
+                $this->validateIfUserHasPermissionForAccount($account, $user);
 
-            $accountResponse = $this->convertAccountInformationToAccountResponse($account);
-            return response()->json(['account'=>$accountResponse], 200);
-            
+                $interestHandler = new AddInterestHandler();
+                $interestHandler->handle($account);
+
+                $accountResponse = $this->convertAccountInformationToAccountResponse($account);
+                return response()->json(['account'=>$accountResponse], 200);
+            });
         } catch(NonExistingAccount | ForbiddenAccountModification $e){
             return response()->json(['error'=>$e->getMessage()], $e->getCode());
         }
@@ -114,7 +122,7 @@ class SavingsAccountController extends AccountController
             'isAccountBlocked'=>$account->is_account_blocked,
             'accountNumber'=>$account->account_number,
             'createdAt'=>$account->created_at,
-            'monthlyInterest'=>$account->monthly_interest,
+            'monthlyInterest'=>$account->accountable->monthly_interest,
             'monthlyMaintenanceFee'=>$account->accountable->monthly_maintenance_fee,
             'transactionFee'=>$account->accountable->transaction_fee,
             'minimumBalance'=>$account->accountable->minimum_balance,
@@ -129,4 +137,5 @@ class SavingsAccountController extends AccountController
             return response()->json(['errors'=> ['error'=>['An account with this account number is already exists!']]], 409);
         }
     }
+
 }
