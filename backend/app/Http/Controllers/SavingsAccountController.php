@@ -9,6 +9,7 @@ use App\Exceptions\NonExistingAccount;
 use App\Exceptions\NonExistingTransactionSubcategoryException;
 use App\Exceptions\UnableToDeleteAccountException;
 use App\Handlers\AddInterestHandler;
+use App\Handlers\RemoveFeeHandler;
 use App\Models\BaseAccount;
 use App\Models\SavingAccount;
 use App\Models\Transaction;
@@ -89,6 +90,8 @@ class SavingsAccountController extends AccountController
                 $this->validateIfUserHasPermissionForAccount($account, $user);
 
                 $interestHandler = new AddInterestHandler();
+                $removeFee = new RemoveFeeHandler();
+                $interestHandler->setNext($removeFee);
                 $interestHandler->handle($account);
 
                 $accountResponse = $this->convertAccountInformationToAccountResponse($account);

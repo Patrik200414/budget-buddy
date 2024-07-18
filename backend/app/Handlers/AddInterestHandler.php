@@ -27,25 +27,6 @@ class AddInterestHandler extends Handler {
     }
 
 
-    private function createTransaction(
-        mixed $request,
-        float $income,
-        float $currBalance, 
-        string $currMonth, 
-        string $currYear,
-        TransactionSubcategory $transactionSubcategoryType
-    ){
-        $incomeTransaction = new Transaction();
-        $incomeTransaction->account_id = $request->id;
-        $incomeTransaction->amount = $income - $currBalance;
-        $incomeTransaction->transaction_time = $this->getFirstDayOfMonth($currMonth, $currYear);
-        $incomeTransaction->title = 'Savings income';
-        $incomeTransaction->description = 'This is the monthly income of the savings account.';
-        $incomeTransaction->transaction_subcategory_id = $transactionSubcategoryType->id;
-
-        return $incomeTransaction;
-    }
-
     private function makeIncomTransaction(mixed $request, int $timeDiff, string $currMonth, string $currYear){
         $currBalance = $request->balance;
         $savingsAccount = $request->accountable;
@@ -53,10 +34,7 @@ class AddInterestHandler extends Handler {
         $request->balance = $income;
         $savingsAccount->last_interest_paied_at = $this->getFirstDayOfMonth($currMonth, $currYear);
 
-        $transactionSubcategoryType = TransactionSubcategory::where(['transaction_subcategory_name'=>'Investment income'])->first();
-        if(!$transactionSubcategoryType){
-            throw new NonExistingTransactionSubcategoryException();
-        }
+        $transactionSubcategoryType = $this->getTransactionSubcategory('Investment income');
 
         $incomeTransaction = $this->createTransaction(
             $request,
