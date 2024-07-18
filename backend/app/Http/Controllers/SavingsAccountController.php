@@ -9,6 +9,7 @@ use App\Exceptions\NonExistingAccount;
 use App\Exceptions\NonExistingTransactionSubcategoryException;
 use App\Exceptions\UnableToDeleteAccountException;
 use App\Handlers\AddInterestHandler;
+use App\Handlers\RemoveFeeHandler;
 use App\Models\BaseAccount;
 use App\Models\SavingAccount;
 use App\Models\Transaction;
@@ -22,6 +23,8 @@ use Illuminate\Http\Request;
 class SavingsAccountController extends AccountController
 {
     use UserFromBearerToken, AccountValidationTrait;
+
+    const ROUND_PRECISION = 2;
 
     public function createAccount(AccountRequest $request){
         try{
@@ -87,6 +90,8 @@ class SavingsAccountController extends AccountController
                 $this->validateIfUserHasPermissionForAccount($account, $user);
 
                 $interestHandler = new AddInterestHandler();
+                $removeFee = new RemoveFeeHandler();
+                $interestHandler->setNext($removeFee);
                 $interestHandler->handle($account);
 
                 $accountResponse = $this->convertAccountInformationToAccountResponse($account);
@@ -118,7 +123,7 @@ class SavingsAccountController extends AccountController
             'id'=>$account->id,
             'accountName'=>$account->account_name,
             'accountType'=>$account->account_type,
-            'balance'=>$account->balance,
+            'balance'=>round($account->balance, self::ROUND_PRECISION),
             'isAccountBlocked'=>$account->is_account_blocked,
             'accountNumber'=>$account->account_number,
             'createdAt'=>$account->created_at,

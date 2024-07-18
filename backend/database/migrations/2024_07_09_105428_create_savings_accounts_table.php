@@ -23,7 +23,7 @@ return new class extends Migration
             $table->smallInteger('max_amount_of_transactions_monthly');
             $table->timestamp('last_avaible_transaction_date')->default(DB::raw('CURRENT_TIMESTAMP'));
             $table->float('limit_exceeding_fee');
-            $table->boolean('is_deletable')->default(false);
+            $table->timestamp('account_exceeded_min_blance_at')->nullable();
             $table->timestamps();
         });
     }
