@@ -9,11 +9,17 @@ class RemoveFeeHandler extends Handler{
 
     public function handle(mixed &$request){
         DB::transaction(function() use($request){
-            $lastmonthlyFeePaidAt = $request->accountable->last_monthly_fee_paid_at;
-            $dateInfo = $this->getDateInformationsForMonthlyTransactions($request, $lastmonthlyFeePaidAt);
+            $savingsAccount = $request->accountable;
+            
     
-            if($dateInfo['timeDifference'] >= 1){
-                $this->subtractMonthlyFee($request, $dateInfo['currentMonth'], $dateInfo['currentYear']);
+            $this->calculateLimitExceedingFee($request, $savingsAccount);
+
+            $feeTransaction = $this->subtractMonthlyFee($request, $savingsAccount);
+
+            if($feeTransaction){
+                $feeTransaction->save();
+                $savingsAccount->save();
+                $request->save();
             }
     
             if($this->nextHandler){
@@ -23,27 +29,48 @@ class RemoveFeeHandler extends Handler{
     }
 
 
-    private function subtractMonthlyFee(mixed &$request, string $currMonth, string $currYear){
-        $currBalance = $request->balance;
-        $savingsAccount = $request->accountable;
-        $balanceAfterRemoval = $currBalance - $savingsAccount->monthly_maintenance_fee;
+    private function subtractMonthlyFee(mixed &$request, mixed $savingsAccount){
+        $lastmonthlyFeePaidAt = $request->accountable->last_monthly_fee_paid_at;
+        $dateInfo = $this->getDateInformationsForMonthlyTransactions($request, $lastmonthlyFeePaidAt);
 
-        $request->balance = $balanceAfterRemoval;
-        $savingsAccount->last_monthly_fee_paid_at = $this->getFirstDayOfMonth($currMonth, $currYear);
+        $feeTransaction = null;
+        if($dateInfo['timeDifference'] >= 1){
+            $currBalance = $request->balance;
+            $balanceAfterRemoval = $currBalance - $savingsAccount->monthly_maintenance_fee;
+    
+            $request->balance = $balanceAfterRemoval;
+            $savingsAccount->last_monthly_fee_paid_at = $this->getFirstDayOfMonth($dateInfo['currentMonth'], $dateInfo['currentYear']);
+    
+            $transactionSubcategoryType = $this->getTransactionSubcategory('Account Maintenance Fees');
+    
+            $feeTransaction = $this->createTransaction(
+                $request,
+                $balanceAfterRemoval,
+                $currBalance,
+                $dateInfo['currentMonth'],
+                $dateInfo['currentYear'],
+                $transactionSubcategoryType
+            );
+        }
 
-        $transactionSubcategoryType = $this->getTransactionSubcategory('Account Maintenance Fees');
+        return $feeTransaction;
+    }
 
-        $feeTransaction = $this->createTransaction(
-            $request,
-            $balanceAfterRemoval,
-            $currBalance,
-            $currMonth,
-            $currYear,
-            $transactionSubcategoryType
-        );
+    private function calculateLimitExceedingFee(mixed &$request, mixed &$savingsAccount){
+        $accountExceededMinBalanceAt = $savingsAccount->accountaccount_exceeded_min_blance_at;
 
-        $feeTransaction->save();
-        $savingsAccount->save();
-        $request->save();
+        $balanceExceedingFeePayments = 0;
+        if($accountExceededMinBalanceAt){
+            $dateInfo = $this->getDateInformationsForMonthlyTransactions($request, $accountExceededMinBalanceAt);
+            
+            if($dateInfo['timeDifference'] >= 1){
+                $balanceExceedingFeePayments = $savingsAccount->account_exceeded_min_blance_at * floor($dateInfo['timeDifference']);
+                $request->balance -= $balanceExceedingFeePayments;        
+            }
+        }
+
+        if($request->balance < $savingsAccount->minimum_balance){
+            $savingsAccount->account_exceeded_min_blance_at = $this->getFirstDayOfMonth($dateInfo['currentMonth'], $dateInfo['currentYear']);
+        }
     }
 }

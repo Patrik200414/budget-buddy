@@ -16,7 +16,8 @@ class SavingAccount extends DepositAccount
         'minimum_balance',
         'max_amount_of_transactions_monthly',
         'last_avaible_transaction_date',
-        'limit_exceeding_fee'
+        'limit_exceeding_fee',
+        'account_exceeded_min_blance_at'
     ];
 
     public function account(){
