@@ -7,12 +7,7 @@ use App\Models\TransactionSubcategory;
 use Carbon\Carbon;
 use DB;
 class AddInterestHandler extends Handler {   
-    private $nextHandler;
-
-    public function setNext(Handler $handler): Handler{
-        $this->nextHandler = $handler;
-        return $handler;
-    }
+    
 
     public function handle(mixed &$request){
         DB::transaction(function() use(&$request){

@@ -23,6 +23,8 @@ class SavingsAccountController extends AccountController
 {
     use UserFromBearerToken, AccountValidationTrait;
 
+    const ROUND_PRECISION = 2;
+
     public function createAccount(AccountRequest $request){
         try{
             return DB::transaction(function() use($request){
@@ -118,7 +120,7 @@ class SavingsAccountController extends AccountController
             'id'=>$account->id,
             'accountName'=>$account->account_name,
             'accountType'=>$account->account_type,
-            'balance'=>$account->balance,
+            'balance'=>round($account->balance, self::ROUND_PRECISION),
             'isAccountBlocked'=>$account->is_account_blocked,
             'accountNumber'=>$account->account_number,
             'createdAt'=>$account->created_at,
